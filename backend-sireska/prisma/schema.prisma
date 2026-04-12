@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  role_id    Int     @id @default(autoincrement()) @db.UnsignedTinyInt
+  role_name  String  @unique @db.VarChar(30)
+  deskripsi  String? @db.VarChar(120)
+  created_at DateTime @default(now())
+
+  users User[]
+}
+
+model User {
+  user_id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  role_id        Int      @db.UnsignedTinyInt
+
+  nim_nip        String   @unique @db.VarChar(20)
+  nama_lengkap   String   @db.VarChar(120)
+  email          String   @unique @db.VarChar(150)
+  password_hash  String   @db.VarChar(255)
+
+  no_hp          String?  @db.VarChar(20)
+  foto_ktm_url   String?  @db.VarChar(255)
+
+  is_verified    Boolean  @default(false)
+  is_active      Boolean  @default(true)
+
+  last_login     DateTime?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  role Role @relation(fields: [role_id], references: [role_id])
+
+  @@index([role_id])
+  @@index([is_verified])
+}
