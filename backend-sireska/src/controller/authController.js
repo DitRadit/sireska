@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 
 // REGISTER
 exports.register = async (req, res) => {
-    const { name, email, password } = req.body;
+    const { nim_nip, nama_lengkap, email, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!nim_nip || !nama_lengkap || !email || !password) {
         return res.status(400).json({ message: "Semua field wajib diisi" });
     }
 
@@ -18,15 +18,30 @@ exports.register = async (req, res) => {
             return res.status(409).json({ message: "Email sudah digunakan" });
         }
 
+        const existingNim = await prisma.user.findUnique({ where: { nim_nip } });
+        if (existingNim) {
+            return res.status(409).json({ message: "NIM/NIP sudah digunakan" });
+        }
+
         const hash = await bcrypt.hash(password, 10);
 
         const user = await prisma.user.create({
-            data: { name, email, password: hash }
+            data: {
+                nim_nip,
+                nama_lengkap,
+                email,
+                password_hash: hash,
+                role_id: 2 
+            }
         });
 
-        res.status(201).json({ message: "Register berhasil", userId: user.id });
+        res.status(201).json({
+            message: "Register berhasil",
+            user_id: user.user_id
+        });
+
     } catch (err) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: err.message });
     }
 };
 
@@ -39,36 +54,36 @@ exports.login = async (req, res) => {
     }
 
     try {
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
 
         if (!user) {
             return res.status(404).json({ message: "User tidak ditemukan" });
         }
 
-        const isValid = await bcrypt.compare(password, user.password);
+        const isValid = await bcrypt.compare(password, user.password_hash);
 
         if (!isValid) {
             return res.status(401).json({ message: "Password salah" });
         }
 
         const token = jwt.sign(
-            { id: user.id, role: user.role },
+            {
+                user_id: user.user_id,
+                role_id: user.role_id
+            },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
 
         res.json({
             message: "Login berhasil",
-            token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            }
+            token
         });
+
     } catch (err) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: err.message });
     }
 };
 
@@ -76,12 +91,12 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
-            where: { id: req.user.id },
+            where: { user_id: req.user.user_id },
             select: {
-                id: true,
-                name: true,
+                user_id: true,
+                nama_lengkap: true,
                 email: true,
-                role: true
+                role_id: true
             }
         });
 
@@ -93,7 +108,8 @@ exports.getProfile = async (req, res) => {
             message: "Berhasil ambil profile",
             user
         });
+
     } catch (err) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: err.message });
     }
 };
