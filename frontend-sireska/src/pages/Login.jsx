@@ -4,24 +4,22 @@ import sideImage from '../assets/Side Image.png'
 
 const Login = () => {
   return (
-    <div className="flex w-full h-screen bg-white font-sans overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen bg-white font-sans">
       
-      <div className="hidden md:flex w-1/2 p-4">
-        <div 
-          className="w-full h-full bg-cover rounded-xl bg-center flex items-center justify-center relative" 
-          style={{ backgroundImage: `url('${sideImage}')` }}
-        >
-          <img src={logoPutih} alt="Logo SiResKa" className="w-80 h-auto relative z-10" />
-        </div>
+      <div 
+        className="w-full h-[35vh] md:h-screen md:w-1/2 flex items-center justify-center bg-cover bg-center relative"
+        style={{ backgroundImage: `url('${sideImage}')` }}
+      >
+        <img src={logoPutih} alt="Logo SiResKa" className="w-52 md:w-80 h-auto relative z-10" />
       </div>
 
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-center relative p-8">
+      <div className="flex-1 md:w-1/2 bg-white flex flex-col items-center justify-center md:justify-center p-8 -mt-8 md:mt-0 rounded-t-[32px] md:rounded-none relative z-20">
         
-        <button className="absolute top-8 right-8 text-2xl font-bold text-black hover:text-gray-600">
+        <button className="hidden md:block absolute top-8 right-8 text-2xl font-bold text-black hover:text-gray-600">
           &lt;
         </button>
 
-        <div className="w-full max-w-sm flex flex-col">
+        <div className="w-full max-w-sm flex flex-col mt-2 md:mt-0">
           
           <h2 className="text-[#ff6b2c] text-4xl font-bold mb-3">Hello Again!</h2>
           <p className="text-gray-500 text-xs font-light mb-8 leading-relaxed pr-4">
@@ -55,19 +53,17 @@ const Login = () => {
 
           </div>
 
-          <button className="w-full py-3 bg-[#ff6b2c] hover:bg-[#e85a1f] text-white font-semibold rounded-lg mt-8 transition-colors shadow-md shadow-orange-500/20">
-            Login
-          </button>
+          <div className="flex items-center gap-3 mt-8">
+            <button className="flex-1 py-3 bg-[#ff6b2c] hover:bg-[#e85a1f] text-white font-semibold rounded-lg transition-colors shadow-md shadow-orange-500/20">
+              Sign Up
+            </button>
+            
+            <div className="w-px h-8 bg-gray-300"></div>
 
-          <div className="flex items-center my-6">
-            <div className="flex-grow border-t border-gray-300"></div>
-            <span className="px-3 text-[11px] text-gray-400 font-medium">or continue with</span>
-            <div className="flex-grow border-t border-gray-300"></div>
+            <button className="flex items-center justify-center w-12 h-12 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+              <span className="text-sm font-bold text-gray-600">G</span>
+            </button>
           </div>
-
-          <button className="flex items-center justify-center w-10 h-10 mx-auto bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
-            <span className="text-sm font-bold text-gray-600">G</span>
-          </button>
 
           <div className="text-center mt-8 text-xs font-semibold text-gray-500">
             Doesn't have an account?{' '}

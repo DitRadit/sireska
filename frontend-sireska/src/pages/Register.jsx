@@ -4,66 +4,64 @@ import sideImage from '../assets/Side Image.png'
 
 const Register = () => {
   return (
-    <div className="flex w-full h-screen bg-white font-sans overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen bg-white font-sans">
       
-      <div className="hidden md:flex w-1/2 p-4">
-        <div 
-          className="w-full h-full bg-cover rounded-xl bg-center flex items-center justify-center relative"
-          style={{ backgroundImage: `url('${sideImage}')` }}
-        >
-          <img src={logoPutih} alt="Logo SiResKa" className="w-80 h-auto relative z-10" />
-        </div>
+      <div 
+        className="w-full h-[35vh] md:h-screen md:w-1/2 flex items-center justify-center bg-cover bg-center relative"
+        style={{ backgroundImage: `url('${sideImage}')` }}
+      >
+        <img src={logoPutih} alt="Logo SiResKa" className="w-52 md:w-80 h-auto relative z-10" />
       </div>
 
-      <div className="w-full md:w-1/2 flex flex-col items-center justify-center relative p-8">
+      <div className="flex-1 md:w-1/2 bg-white flex flex-col items-center justify-center md:justify-center p-8 -mt-8 md:mt-0 rounded-t-[32px] md:rounded-none relative z-20">
         
-        <button className="absolute top-8 right-8 text-2xl font-bold text-black hover:text-gray-600">
+        <button className="hidden md:block absolute top-8 right-8 text-2xl font-bold text-black hover:text-gray-600">
           &lt;
         </button>
 
-        <div className="w-full max-w-sm flex flex-col">
+        <div className="w-full max-w-sm flex flex-col mt-2 md:mt-0">
           
-          <h2 className="text-[#ff6b2c] text-4xl font-bold mb-3">Create an account</h2>
-          <p className="text-gray-500 text-xs font-light mb-6 leading-relaxed pr-4">
+          <h2 className="text-[#ff6b2c] text-3xl md:text-4xl font-bold mb-2 md:mb-3">Create an account</h2>
+          <p className="text-gray-500 text-[10px] md:text-xs font-light mb-6 md:mb-8 leading-relaxed pr-4">
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
           </p>
 
           <div className="flex flex-col gap-3.5">
             
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold text-gray-800">Your name</label>
+              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Your name</label>
               <input 
                 type="text" 
                 placeholder="your name" 
-                className="w-full px-4 py-2.5 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b2c] text-sm"
+                className="w-full px-4 py-2 md:py-2.5 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b2c] text-sm"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold text-gray-800">Student id (optional)</label>
+              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Student id (optional)</label>
               <input 
                 type="text" 
                 placeholder="103012400000" 
-                className="w-full px-4 py-2.5 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b2c] text-sm"
+                className="w-full px-4 py-2 md:py-2.5 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b2c] text-sm"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold text-gray-800">Your email</label>
+              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Your email</label>
               <input 
                 type="email" 
                 placeholder="email@gmail.com" 
-                className="w-full px-4 py-2.5 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b2c] text-sm"
+                className="w-full px-4 py-2 md:py-2.5 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b2c] text-sm"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold text-gray-800">Create password</label>
+              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Create password</label>
               <div className="relative">
                 <input 
                   type="password" 
                   placeholder="password" 
-                  className="w-full px-4 py-2.5 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b2c] text-sm"
+                  className="w-full px-4 py-2 md:py-2.5 rounded-md border border-gray-200 focus:outline-none focus:border-[#ff6b2c] text-sm"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer text-sm">
                   👁️
