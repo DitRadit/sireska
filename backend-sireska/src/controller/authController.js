@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { generateOTP, saveOTP, sendOTP, verifyOTP } = require("../utils/otp");
 
 const prisma = new PrismaClient();
 
@@ -13,14 +14,16 @@ exports.register = async (req, res) => {
     }
 
     try {
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
-            return res.status(409).json({ message: "Email sudah digunakan" });
-        }
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                OR: [{ email }, { nim_nip }]
+            }
+        });
 
-        const existingNim = await prisma.user.findUnique({ where: { nim_nip } });
-        if (existingNim) {
-            return res.status(409).json({ message: "NIM/NIP sudah digunakan" });
+        if (existingUser) {
+            return res.status(409).json({
+                message: "Email atau NIM/NIP sudah digunakan"
+            });
         }
 
         const hash = await bcrypt.hash(password, 10);
@@ -31,17 +34,26 @@ exports.register = async (req, res) => {
                 nama_lengkap,
                 email,
                 password_hash: hash,
-                role_id: 2 
+                role_id: 2,
+                is_verified: false
             }
         });
 
-        res.status(201).json({
-            message: "Register berhasil",
-            user_id: user.user_id
-        });
+        const otp = generateOTP();
+
+        saveOTP(email, otp);
+
+        await sendOTP(email, otp);
+
+      res.status(201).json({
+        message: "Register berhasil, cek email untuk OTP",
+        user_id: user.user_id,
+        email: user.email  
+    });
 
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        console.error(err);
+        res.status(500).json({ message: "Terjadi kesalahan server" });
     }
 };
 
@@ -61,6 +73,13 @@ exports.login = async (req, res) => {
         if (!user) {
             return res.status(404).json({ message: "User tidak ditemukan" });
         }
+
+        if (!user.is_verified) {
+        return res.status(403).json({
+            message: "Akun belum diverifikasi, cek email untuk OTP",
+            email: user.email  
+        });
+    }
 
         const isValid = await bcrypt.compare(password, user.password_hash);
 
@@ -111,5 +130,65 @@ exports.getProfile = async (req, res) => {
 
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+exports.verifyOtp = async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        return res.status(400).json({ message: "Email dan OTP wajib diisi" });
+    }
+
+    try {
+        const result = verifyOTP(email, otp);
+
+        if (!result.status) {
+            return res.status(400).json({ message: result.message });
+        }
+
+        await prisma.user.update({
+            where: { email },
+            data: { is_verified: true }
+        });
+
+        res.json({ message: "Verifikasi berhasil" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Terjadi kesalahan server" });
+    }
+};
+
+exports.resendOtp = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ message: "Email wajib diisi" });
+    }
+
+    try {
+
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: "Email tidak ditemukan" });
+        }
+
+        if (user.is_verified) {
+            return res.status(400).json({ message: "Akun sudah terverifikasi" });
+        }
+
+        const otp = generateOTP();
+        saveOTP(email, otp);
+        await sendOTP(email, otp);
+
+        res.json({ message: "OTP berhasil dikirim ulang" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Gagal kirim OTP" });
     }
 };

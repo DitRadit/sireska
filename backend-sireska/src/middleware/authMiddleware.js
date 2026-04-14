@@ -32,9 +32,13 @@ const authMiddleware = async (req, res, next) => {
             return res.status(401).json({ message: "User tidak ditemukan" });
         }
 
-        if (!user.is_active) {
-            return res.status(403).json({ message: "User tidak aktif" });
-        }
+if (!user.is_active) {
+    return res.status(403).json({ message: "User tidak aktif" });
+}
+
+if (!user.is_verified) {
+    return res.status(403).json({ message: "Akun belum diverifikasi" });
+}
 
         req.user = {
             user_id: user.user_id,
