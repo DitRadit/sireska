@@ -106,6 +106,40 @@ exports.login = async (req, res) => {
     }
 };
 
+exports.resetPassword = async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ message: "Email dan password baru wajib diisi" });
+    }
+
+    try {
+        // Cari user berdasarkan email
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: "User dengan email tersebut tidak ditemukan" });
+        }
+
+        // Hash password baru
+        const hash = await bcrypt.hash(password, 10);
+
+        // Update password_hash di database
+        await prisma.user.update({
+            where: { email },
+            data: { password_hash: hash }
+        });
+
+        res.json({ message: "Password berhasil diperbarui" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Terjadi kesalahan pada server" });
+    }
+};
+
 //PROFILE
 exports.getProfile = async (req, res) => {
     try {

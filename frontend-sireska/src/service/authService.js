@@ -30,6 +30,11 @@ const authService = {
         return res.data; 
     },
 
+    resetPassword: async (email, password) => {
+        const res = await api.post('/auth/reset-password', { email, password });
+        return res.data; 
+    },
+
     logout: () => {
         localStorage.removeItem('token');
         window.location.href = '/login';
