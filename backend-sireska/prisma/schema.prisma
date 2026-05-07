@@ -40,3 +40,48 @@ model User {
   @@index([role_id])
   @@index([is_verified])
 }
+
+model Fasilitas {
+  fasilitas_id   Int      @id @default(autoincrement()) @db.UnsignedInt
+  nama_fasilitas String   @db.VarChar(100)
+  deskripsi      String?  @db.Text
+  lokasi         String?  @db.VarChar(150)
+  kapasitas      Int?     @db.UnsignedSmallInt
+  gambar_url     String?  @db.VarChar(500)
+  gambar_public_id String? @db.VarChar(255)
+
+  status         StatusFasilitas @default(aktif)
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  jadwal         JadwalFasilitas[]
+}
+
+model JadwalFasilitas {
+  jadwal_id    Int      @id @default(autoincrement()) @db.UnsignedInt
+  fasilitas_id Int      @db.UnsignedInt
+  hari         HariFasilitas
+  jam_buka     String   @db.VarChar(5)
+  jam_tutup    String   @db.VarChar(5)
+
+  fasilitas    Fasilitas @relation(fields: [fasilitas_id], references: [fasilitas_id], onDelete: Cascade)
+
+  @@index([fasilitas_id])
+}
+
+enum StatusFasilitas {
+  aktif
+  maintenance
+  nonaktif
+}
+
+enum HariFasilitas {
+  senin
+  selasa
+  rabu
+  kamis
+  jumat
+  sabtu
+  minggu
+}
