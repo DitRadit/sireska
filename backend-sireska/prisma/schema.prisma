@@ -37,6 +37,8 @@ model User {
 
   role Role @relation(fields: [role_id], references: [role_id])
 
+  reservasi Reservasi[]
+
   @@index([role_id])
   @@index([is_verified])
 }
@@ -49,6 +51,8 @@ model Fasilitas {
   kapasitas      Int?     @db.UnsignedSmallInt
   gambar_url     String?  @db.VarChar(500)
   gambar_public_id String? @db.VarChar(255)
+
+  reservasi Reservasi[]
 
   status         StatusFasilitas @default(aktif)
 
@@ -65,9 +69,40 @@ model JadwalFasilitas {
   jam_buka     String   @db.VarChar(5)
   jam_tutup    String   @db.VarChar(5)
 
+  reservasi Reservasi[]
+  
   fasilitas    Fasilitas @relation(fields: [fasilitas_id], references: [fasilitas_id], onDelete: Cascade)
 
   @@index([fasilitas_id])
+}
+
+model Reservasi {
+  reservasi_id   Int      @id @default(autoincrement()) @db.UnsignedInt
+  user_id        Int      @db.UnsignedInt
+  fasilitas_id   Int      @db.UnsignedInt
+  jadwal_id      Int      @db.UnsignedInt
+  tanggal        DateTime @db.Date
+  keperluan      String?  @db.VarChar(255)
+  status         StatusReservasi @default(menunggu)
+  catatan_admin  String?  @db.VarChar(255)
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user           User      @relation(fields: [user_id], references: [user_id])
+  fasilitas      Fasilitas @relation(fields: [fasilitas_id], references: [fasilitas_id])
+  jadwal         JadwalFasilitas @relation(fields: [jadwal_id], references: [jadwal_id])
+
+  @@index([user_id])
+  @@index([fasilitas_id])
+  @@index([jadwal_id])
+  @@index([status])
+}
+
+enum StatusReservasi {
+  menunggu
+  disetujui
+  ditolak
 }
 
 enum StatusFasilitas {

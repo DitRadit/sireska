@@ -4,7 +4,8 @@ const cors = require("cors");
 require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes");
-const fasilitasRoutes = require("./routes/fasilitasRoutes"); // ← TAMBAH INI
+const fasilitasRoutes = require("./routes/fasilitasRoutes");
+const reservasiRoutes = require("./routes/reservasiRoutes"); 
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(cors({
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
-app.use("/api/fasilitas", fasilitasRoutes); // ← TAMBAH INI
+app.use("/api/fasilitas", fasilitasRoutes);
+app.use("/api/reservasi", reservasiRoutes); 
 
 module.exports = app;
