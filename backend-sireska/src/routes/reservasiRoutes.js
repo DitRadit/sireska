@@ -12,7 +12,7 @@ const reservasi = require("../controller/reservasiController");
 router.post(
     "/",
     authMiddleware,
-    requireRole("admin", "user"),
+    requireRole(1, 2),
     reservasi.createReservasi
 );
 
@@ -20,7 +20,7 @@ router.post(
 router.get(
     "/my",
     authMiddleware,
-    requireRole("admin", "user"),
+    requireRole(1, 2),
     reservasi.getMyReservasi
 );
 
@@ -28,7 +28,7 @@ router.get(
 router.get(
     "/my/:id",
     authMiddleware,
-    requireRole("admin", "user"),
+    requireRole(1, 2),
     reservasi.getMyReservasiById
 );
 
@@ -36,7 +36,7 @@ router.get(
 router.patch(
     "/my/:id/cancel",
     authMiddleware,
-    requireRole("admin", "user"),
+    requireRole(1, 2),
     reservasi.cancelReservasi
 );
 
@@ -46,7 +46,7 @@ router.patch(
 router.get(
     "/admin",
     authMiddleware,
-    requireRole("admin"),
+    requireRole(1),
     reservasi.getAllReservasiAdmin
 );
 
@@ -54,7 +54,7 @@ router.get(
 router.get(
     "/admin/:id",
     authMiddleware,
-    requireRole("admin"),
+    requireRole(1),
     reservasi.getReservasiByIdAdmin
 );
 
@@ -62,7 +62,7 @@ router.get(
 router.patch(
     "/admin/:id/approve",
     authMiddleware,
-    requireRole("admin"),
+    requireRole(1),
     reservasi.approveReservasi
 );
 
@@ -70,7 +70,7 @@ router.patch(
 router.patch(
     "/admin/:id/reject",
     authMiddleware,
-    requireRole("admin"),
+    requireRole(1),
     reservasi.rejectReservasi
 );
 

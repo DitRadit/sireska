@@ -15,7 +15,7 @@ router.get("/:id", fasilitas.getFasilitasById);
 router.post(
     "/",
     authMiddleware,
-    requireRole("admin"),
+    requireRole(1),
     upload.single("gambar"),
     fasilitas.createFasilitas
 );
@@ -23,7 +23,7 @@ router.post(
 router.put(
     "/:id",
     authMiddleware,
-    requireRole("admin"),
+    requireRole(1),
     upload.single("gambar"),
     fasilitas.updateFasilitas
 );
@@ -31,14 +31,14 @@ router.put(
 router.patch(
     "/:id/status",
     authMiddleware,
-    requireRole("admin"),
+    requireRole(1),
     fasilitas.updateStatus
 );
 
 router.delete(
     "/:id",
     authMiddleware,
-    requireRole("admin"),
+    requireRole(1),
     fasilitas.deleteFasilitas
 );
 

@@ -15,7 +15,7 @@ router.get("/profile", authMiddleware, auth.getProfile);
 
 router.get("/admin",
     authMiddleware,
-    requireRole("admin"),
+    requireRole(1),
     (req, res) => {
         res.json({ message: "Halo Admin" });
     }
@@ -23,7 +23,7 @@ router.get("/admin",
 
 router.get("/user",
     authMiddleware,
-    requireRole("admin", "user"),
+    requireRole(1, 2),
     (req, res) => {
         res.json({ message: "Halo User & Admin" });
     }

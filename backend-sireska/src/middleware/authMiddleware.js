@@ -43,7 +43,6 @@ if (!user.is_verified) {
         req.user = {
             user_id: user.user_id,
             role_id: user.role_id,
-            role: user.role.role_name
         };
 
         next();

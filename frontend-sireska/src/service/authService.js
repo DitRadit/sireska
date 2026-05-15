@@ -11,8 +11,10 @@ const authService = {
 
     login: async (email, password) => {
         const res = await api.post('/auth/login', { email, password });
-        localStorage.setItem('token', res.data.token); 
-        return res.data; 
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+        window.dispatchEvent(new Event('authChange'));
+        return res.data;
     },
 
     verifyOtp: async (email, otp) => {

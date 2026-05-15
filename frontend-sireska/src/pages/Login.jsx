@@ -18,53 +18,80 @@ const Login = () => {
         })
     }
 
-    const handleSubmit = async () => {
-        setError('')
+const handleSubmit = async () => {
 
-        if (!form.email || !form.password) {
-            setError('Email dan password wajib diisi')
+    setError('')
+
+    // validasi
+    if (!form.email || !form.password) {
+
+        setError(
+            'Email dan password wajib diisi'
+        )
+
+        return
+    }
+
+    setLoading(true)
+
+    try {
+
+        const response =
+            await authService.login(
+                form.email,
+                form.password
+            )
+
+        console.log(
+            'Response Login:',
+            response
+        )
+
+        const userData =
+            response.user
+
+        if (userData.role_id === 1) {
+
+            window.location.href =
+                '/admin/dashboard'
+
+        } else {
+
+            window.location.href =
+                '/home'
+        }
+
+    } catch (err) {
+
+        const status =
+            err.response?.status
+
+        const message =
+            err.response?.data?.message ||
+            'Login gagal'
+
+        const email =
+            err.response?.data?.email
+
+        if (
+            status === 403 &&
+            email
+        ) {
+
+            navigate(
+                `/verify-otp?email=${email}`
+            )
+
             return
         }
 
-        setLoading(true)
-        try {
-            const response = await authService.login(form.email, form.password)
-            
-            // --- LOGIKA PINTAR PENYIMPANAN DATA ---
-            console.log("Cek Data dari Backend:", response); // Biar gampang kalau mau ngecek (F12)
+        setError(message)
 
-            // Mengakali berbagai format response dari backend (kadang ada .data, kadang tidak)
-            const token = response?.token || response?.data?.token;
-            const userData = response?.user || response?.data?.user || response?.data || {};
+    } finally {
 
-            if (token) {
-                // Simpan token
-                localStorage.setItem('token', token);
-                // Simpan seluruh data user agar bisa dibaca Header
-                localStorage.setItem('user', JSON.stringify(userData));
-
-                // Paksa pindah halaman dan re-render agar Header membaca localStorage
-                window.location.href = '/home';
-            } else {
-                setError("Token tidak ditemukan dari server.");
-            }
-            // ----------------------------------------
-
-        } catch (err) {
-            const status = err.response?.status
-            const message = err.response?.data?.message || 'Login gagal'
-            const email = err.response?.data?.email
-
-            if (status === 403 && email) {
-                navigate(`/verify-otp?email=${email}`)
-                return
-            }
-
-            setError(message)
-        } finally {
-            setLoading(false)
-        }
+        setLoading(false)
     }
+}
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-white font-sans">
@@ -78,9 +105,12 @@ const Login = () => {
             </div>
 
             <div className="flex-1 md:w-1/2 bg-white flex flex-col items-center justify-center p-8 -mt-8 md:mt-0 rounded-t-[32px] md:rounded-none relative z-20">
-                <button className="hidden md:block absolute top-8 right-8 text-2xl font-bold text-black hover:text-gray-600">
-                    &lt;
-                </button>
+    <button
+        onClick={() => navigate("/home")}
+        className="hidden md:block absolute top-8 right-8 text-2xl font-bold text-black hover:text-gray-600"
+    >
+        &lt;
+    </button>
 
                 <div className="w-full max-w-sm flex flex-col mt-2 md:mt-0">
                     <h2 className="text-[#ff6b2c] text-4xl font-bold mb-3">Hello Again!</h2>

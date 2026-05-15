@@ -93,7 +93,7 @@ exports.createFasilitas = async (req, res) => {
         if (jadwal) {
             const parsed = typeof jadwal === "string" ? JSON.parse(jadwal) : jadwal;
             jadwalData = parsed.map((j) => ({
-                hari: j.hari,
+                hari: j.hari.toLowerCase(),
                 jam_buka: j.jam_buka,
                 jam_tutup: j.jam_tutup,
             }));
@@ -174,7 +174,7 @@ exports.updateFasilitas = async (req, res) => {
 
             updateData.jadwal = {
                 create: parsed.map((j) => ({
-                    hari: j.hari,
+                    hari: j.hari.toLowerCase(),
                     jam_buka: j.jam_buka,
                     jam_tutup: j.jam_tutup,
                 })),

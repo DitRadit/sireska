@@ -117,9 +117,12 @@ const Register = () => {
 
       <div className="flex-1 md:w-1/2 bg-white flex flex-col items-center justify-center p-8 -mt-8 md:mt-0 rounded-t-[32px] md:rounded-none relative z-20">
         
-        <button className="hidden md:block absolute top-8 right-8 text-2xl font-bold text-black hover:text-gray-600">
-          &lt;
-        </button>
+    <button
+        onClick={() => navigate("/home")}
+        className="hidden md:block absolute top-8 right-8 text-2xl font-bold text-black hover:text-gray-600"
+    >
+        &lt;
+    </button>
 
         <div className="w-full max-w-sm flex flex-col mt-2 md:mt-0">
           
