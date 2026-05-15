@@ -29,7 +29,7 @@ const Login = () => {
         setLoading(true)
         try {
             await authService.login(form.email, form.password)
-            navigate('/profile')
+            navigate('/Home')
         } catch (err) {
             const status = err.response
                 ?.status
