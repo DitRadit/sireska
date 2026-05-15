@@ -75,11 +75,11 @@ exports.login = async (req, res) => {
         }
 
         if (!user.is_verified) {
-        return res.status(403).json({
-            message: "Akun belum diverifikasi, cek email untuk OTP",
-            email: user.email  
-        });
-    }
+            return res.status(403).json({
+                message: "Akun belum diverifikasi, cek email untuk OTP",
+                email: user.email  
+            });
+        }
 
         const isValid = await bcrypt.compare(password, user.password_hash);
 
@@ -96,16 +96,26 @@ exports.login = async (req, res) => {
             { expiresIn: "1d" }
         );
 
+        // --- BAGIAN YANG DIPERBAIKI ---
         res.json({
             message: "Login berhasil",
-            token
+            token,
+            user: {
+                user_id: user.user_id,
+                email: user.email,
+                nama_lengkap: user.nama_lengkap, 
+                nim_nip: user.nim_nip,
+                role_id: user.role_id
+            }
         });
+        // ------------------------------
 
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
+// RESET PASSWORD
 exports.resetPassword = async (req, res) => {
     const { email, password } = req.body;
 
@@ -140,7 +150,7 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
-//PROFILE
+// PROFILE
 exports.getProfile = async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
@@ -167,6 +177,7 @@ exports.getProfile = async (req, res) => {
     }
 };
 
+// VERIFY OTP
 exports.verifyOtp = async (req, res) => {
     const { email, otp } = req.body;
 
@@ -194,6 +205,7 @@ exports.verifyOtp = async (req, res) => {
     }
 };
 
+// RESEND OTP
 exports.resendOtp = async (req, res) => {
     const { email } = req.body;
 
