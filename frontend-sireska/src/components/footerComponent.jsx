@@ -38,7 +38,6 @@ const FooterComponent = () => {
             <h4 className="font-bold text-lg mb-4">Features</h4>
             <ul className="space-y-3 text-sm text-white/90 font-medium">
               <li><a href="/booking" className="hover:text-white hover:underline transition-colors">Booking</a></li>
-              <li><a href="/jadwal" className="hover:text-white hover:underline transition-colors">Lihat Jadwal</a></li>
               <li><a href="/fasilitas" className="hover:text-white hover:underline transition-colors">Fasilitas</a></li>
               <li><a href="/pesanan" className="hover:text-white hover:underline transition-colors">Lihat Pesanan</a></li>
             </ul>

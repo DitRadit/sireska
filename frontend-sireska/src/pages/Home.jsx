@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 // Import komponen pendukung
-import HeaderComponent from '../components/HeaderComponent';
+import HeaderComponent from '../components/headerComponent';
 import FooterComponent from '../components/FooterComponent';
 import Gambar from '../assets/3d Art.png'; 
 
@@ -89,7 +89,7 @@ const Home = () => {
             </div>
           </div>
           <div className="lg:w-1/2">
-            <div className="bg-gray-50 rounded-3xl w-full h-[450px] shadow-2xl border border-gray-100 flex items-center justify-center overflow-hidden p-8 group">
+            <div className="rounded-3xl w-full h-[450px] flex items-center justify-center overflow-hidden p-8 group">
                <img src={Gambar} alt="3D Illustration" className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105" />
             </div>
           </div>

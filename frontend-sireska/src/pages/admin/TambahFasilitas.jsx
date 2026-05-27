@@ -1,23 +1,15 @@
-// /admin/TambahFasilitas.jsx
-
 import { useEffect, useState } from "react";
-import {
-  useNavigate,
-  useParams,
-} from "react-router-dom";
-
-import SidebarComponent from "../../components/sidebarComponent";
-import fasilitasService from "../../service/fasilitasServics";
+import { useNavigate, useParams } from "react-router-dom";
+import SidebarComponent from "../../components/sidebarComponent"; // Pastikan huruf besar/kecil path ini sesuai
+import fasilitasService from "../../service/fasilitasServices"; // Pastikan nama file service benar
 
 const TambahFasilitas = () => {
-
   const { id } = useParams();
-
   const navigate = useNavigate();
-
   const isEdit = Boolean(id);
 
   const [loading, setLoading] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false); // State untuk alert 2 detik
 
   const [formData, setFormData] = useState({
     nama_fasilitas: "",
@@ -31,7 +23,7 @@ const TambahFasilitas = () => {
 
   const [jadwal, setJadwal] = useState([
     {
-      hari: "Senin",
+      hari: "senin",
       jam_buka: "08:00",
       jam_tutup: "17:00",
     },
@@ -39,69 +31,41 @@ const TambahFasilitas = () => {
 
   // ─── FETCH DETAIL ───────────────────────────────────
   useEffect(() => {
-
     if (isEdit) {
       fetchDetail();
     }
-
   }, [id]);
 
   const fetchDetail = async () => {
-
     try {
-
       setLoading(true);
-
-      const res =
-        await fasilitasService.getFasilitasById(id);
-
+      const res = await fasilitasService.getFasilitasById(id);
       const data = res.data;
 
       setFormData({
-        nama_fasilitas:
-          data.nama_fasilitas || "",
-
-        lokasi:
-          data.lokasi || "",
-
-        tipe:
-          data.tipe || "Outdoor",
-
-        kapasitas:
-          data.kapasitas || "",
-
-        deskripsi:
-          data.deskripsi || "",
-
-        gambar: null,
-
-        status:
-          data.status || "aktif",
+        nama_fasilitas: data.nama_fasilitas || "",
+        lokasi: data.lokasi || "",
+        tipe: data.tipe || "Outdoor",
+        kapasitas: data.kapasitas || "",
+        deskripsi: data.deskripsi || "",
+        gambar: null, 
+        status: data.status || "aktif",
       });
 
       if (data.jadwal?.length) {
-
         setJadwal(data.jadwal);
-
       }
-
     } catch (err) {
-
       console.error(err);
-
       alert("Gagal mengambil detail fasilitas");
-
     } finally {
-
       setLoading(false);
     }
   };
 
   // ─── HANDLE INPUT ───────────────────────────────────
   const handleChange = (e) => {
-
     const { name, value } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -110,7 +74,6 @@ const TambahFasilitas = () => {
 
   // ─── HANDLE IMAGE ───────────────────────────────────
   const handleImage = (e) => {
-
     setFormData((prev) => ({
       ...prev,
       gambar: e.target.files[0],
@@ -118,25 +81,17 @@ const TambahFasilitas = () => {
   };
 
   // ─── HANDLE JADWAL ──────────────────────────────────
-  const handleJadwalChange = (
-    index,
-    field,
-    value
-  ) => {
-
+  const handleJadwalChange = (index, field, value) => {
     const updated = [...jadwal];
-
     updated[index][field] = value;
-
     setJadwal(updated);
   };
 
   const tambahJadwal = () => {
-
     setJadwal([
       ...jadwal,
       {
-        hari: "Senin",
+        hari: "senin",
         jam_buka: "08:00",
         jam_tutup: "17:00",
       },
@@ -144,338 +99,260 @@ const TambahFasilitas = () => {
   };
 
   const hapusJadwal = (index) => {
-
     const updated = [...jadwal];
-
     updated.splice(index, 1);
-
     setJadwal(updated);
   };
 
   // ─── SUBMIT ─────────────────────────────────────────
   const handleSubmit = async () => {
-
     try {
-
       setLoading(true);
 
       const payload = {
-        nama_fasilitas:
-          formData.nama_fasilitas,
-
-        lokasi:
-          formData.lokasi,
-
-        kapasitas:
-          formData.kapasitas,
-
-        deskripsi:
-          formData.deskripsi,
-
-        gambar:
-          formData.gambar,
-
-        status:
-          formData.status,
-
+        nama_fasilitas: formData.nama_fasilitas,
+        lokasi: formData.lokasi,
+        kapasitas: formData.kapasitas,
+        deskripsi: formData.deskripsi,
+        gambar: formData.gambar,
+        status: formData.status,
         jadwal,
       };
 
-      let res;
-
       if (isEdit) {
-
-        res =
-          await fasilitasService.updateFasilitas(
-            id,
-            payload
-          );
-
+        await fasilitasService.updateFasilitas(id, payload);
       } else {
-
-        res =
-          await fasilitasService.createFasilitas(
-            payload
-          );
+        await fasilitasService.createFasilitas(payload);
       }
 
-      alert(
-        res.message ||
-        (isEdit
-          ? "Fasilitas berhasil diupdate"
-          : "Fasilitas berhasil ditambahkan")
-      );
+      // 1. Munculkan Alert Custom
+      setShowSuccessAlert(true);
 
-      navigate("/admin/fasilitas");
+      // 2. Tunggu 2 detik, baru pindah halaman
+      setTimeout(() => {
+        navigate("/admin/fasilitas");
+      }, 2000);
 
     } catch (err) {
-
       console.error(err);
-
-      alert(
-        err?.response?.data?.message ||
-        "Terjadi kesalahan"
-      );
-
-    } finally {
-
-      setLoading(false);
+      alert(err?.response?.data?.message || "Terjadi kesalahan saat menyimpan");
+      setLoading(false); // Matikan loading kalau gagal
     }
   };
 
   return (
     <>
-      {/* GOOGLE FONT */}
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-          * {
-            font-family: 'Poppins', sans-serif;
-          }
+          * { font-family: 'Poppins', sans-serif; }
         `}
       </style>
 
-      {/* GOOGLE ICONS */}
       <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
         rel="stylesheet"
       />
 
-      <div className="bg-[#F7F7F7] min-h-screen flex">
+      {/* ALERT CUSTOM (100% Tailwind, Pasti Muncul!) */}
+      {showSuccessAlert && (
+        <div className="fixed top-10 left-1/2 transform -translate-x-1/2 z-[9999] bg-white px-6 py-4 rounded-2xl shadow-[0_10px_40px_rgba(34,197,94,0.3)] border-2 border-green-500 flex items-center gap-4 transition-all duration-300 animate-bounce">
+          <span className="material-symbols-outlined text-green-500 text-[36px]">
+            check_circle
+          </span>
+          <div>
+            <h4 className="font-bold text-lg text-gray-800">Berhasil!</h4>
+            <p className="text-sm font-medium text-gray-500">
+              {isEdit ? "Data fasilitas diperbarui." : "Fasilitas baru ditambahkan."} Mengalihkan...
+            </p>
+          </div>
+        </div>
+      )}
 
+      <div className="bg-[#f7f5f4] min-h-screen flex">
         {/* SIDEBAR */}
         <SidebarComponent />
 
         {/* CONTENT */}
-        <div className="flex-1 lg:ml-[280px] w-full overflow-x-hidden">
-
+        <div className="flex-1 lg:ml-[260px] w-full overflow-x-hidden flex flex-col">
+          
           {/* HEADER */}
-          <div className="bg-white border-b border-gray-200 px-5 md:px-10 py-6">
+          <div className="bg-white border-b border-gray-100 px-8 py-5 sticky top-0 z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">
+                {isEdit ? "Edit Fasilitas" : "Tambah Fasilitas"}
+              </h1>
+              <p className="text-gray-500 mt-1 text-sm font-medium">
+                Isi detail informasi fasilitas olahraga di bawah ini.
+              </p>
+            </div>
 
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-
-              <div>
-
-                <h1 className="text-2xl md:text-4xl font-semibold text-[#2D2D2D]">
-
-                  {isEdit
-                    ? "Edit Fasilitas"
-                    : "Tambah Fasilitas Baru"}
-
-                </h1>
-
-                <p className="text-gray-400 mt-2 text-sm md:text-lg">
-                  Isi detail fasilitas
-                </p>
-
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-
-                <button
-                  onClick={() => navigate(-1)}
-                  className="border-2 border-orange-500 text-orange-500 px-6 py-3 rounded-2xl font-medium hover:bg-orange-50 transition"
-                >
-                  Batal
-                </button>
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="bg-orange-500 text-white px-6 py-3 rounded-2xl font-medium hover:bg-orange-600 transition disabled:opacity-50"
-                >
-                  {loading
-                    ? "Menyimpan..."
-                    : isEdit
-                      ? "Update Fasilitas"
-                      : "Simpan Fasilitas"}
-                </button>
-
-              </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="bg-white border border-gray-200 text-gray-600 px-5 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition text-sm"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading || showSuccessAlert}
+                className="bg-orange-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-orange-600 transition disabled:opacity-50 text-sm shadow-sm"
+              >
+                {loading ? "Menyimpan..." : (isEdit ? "Update Fasilitas" : "Simpan Fasilitas")}
+              </button>
             </div>
           </div>
 
-          {/* FORM */}
-          <div className="p-4 md:p-8">
+          {/* FORM AREA */}
+          <div className="p-8 flex-1 overflow-y-auto">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 max-w-6xl mx-auto relative">
+              
+              {/* Overlay loading/sukses (Opsional: agar form tidak bisa diklik saat alert muncul) */}
+              {showSuccessAlert && (
+                <div className="absolute inset-0 bg-white/50 z-50 rounded-3xl backdrop-blur-[1px]"></div>
+              )}
 
-            <div className="bg-white rounded-[30px] shadow-sm border border-gray-100 p-5 md:p-8">
-
-              {/* TITLE */}
-              <div className="flex items-center gap-3 mb-8">
-
-                <span className="material-symbols-outlined text-orange-500">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-50">
+                <span className="material-symbols-outlined text-orange-500 bg-orange-50 p-2 rounded-lg">
                   edit_square
                 </span>
-
-                <h2 className="text-xl md:text-2xl font-semibold text-orange-500">
-                  Informasi Fasilitas
+                <h2 className="text-lg font-bold text-gray-800">
+                  Informasi Dasar
                 </h2>
-
               </div>
 
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
-                {/* LEFT */}
-                <div className="xl:col-span-2">
-
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* LEFT COLUMN */}
+                <div className="lg:col-span-2 flex flex-col gap-5">
+                  
                   {/* NAMA */}
-                  <div className="mb-6">
-
-                    <label className="block font-semibold text-gray-700 mb-3">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
                       Nama Fasilitas
                     </label>
-
                     <input
                       type="text"
                       name="nama_fasilitas"
                       value={formData.nama_fasilitas}
                       onChange={handleChange}
-                      placeholder="Lapangan Tenis"
-                      className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-orange-300"
+                      placeholder="Contoh: Lapangan Futsal A"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium"
                     />
-
                   </div>
 
                   {/* LOKASI */}
-                  <div className="mb-6">
-
-                    <label className="block font-semibold text-gray-700 mb-3">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
                       Lokasi / Gedung
                     </label>
-
                     <div className="relative">
-
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                        search
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">
+                        location_on
                       </span>
-
                       <input
                         type="text"
                         name="lokasi"
                         value={formData.lokasi}
                         onChange={handleChange}
-                        placeholder="Cari gedung atau lokasi"
-                        className="w-full border border-gray-300 rounded-2xl pl-14 pr-5 py-4 outline-none focus:ring-2 focus:ring-orange-300"
+                        placeholder="Cari gedung atau lokasi..."
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium"
                       />
-
                     </div>
                   </div>
 
                   {/* TIPE & KAPASITAS */}
-                  <div className="grid md:grid-cols-2 gap-6 mb-8">
-
-                    {/* TIPE */}
+                  <div className="grid grid-cols-2 gap-5">
                     <div>
-
-                      <label className="block font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
                         Tipe Fasilitas
                       </label>
-
                       <select
                         name="tipe"
                         value={formData.tipe}
                         onChange={handleChange}
-                        className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-orange-300"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium cursor-pointer"
                       >
-                        <option>Outdoor</option>
-                        <option>Indoor</option>
+                        <option value="Outdoor">Outdoor</option>
+                        <option value="Indoor">Indoor</option>
                       </select>
-
                     </div>
 
-                    {/* KAPASITAS */}
                     <div>
-
-                      <label className="block font-semibold text-gray-700 mb-3">
-                        Kapasitas
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Kapasitas (Orang)
                       </label>
-
-                      <div className="flex items-center gap-4">
-
-                        <input
-                          type="number"
-                          name="kapasitas"
-                          value={formData.kapasitas}
-                          onChange={handleChange}
-                          placeholder="40"
-                          className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-orange-300"
-                        />
-
-                        <span className="text-gray-600 font-medium">
-                          Orang
-                        </span>
-
-                      </div>
+                      <input
+                        type="number"
+                        name="kapasitas"
+                        value={formData.kapasitas}
+                        onChange={handleChange}
+                        placeholder="Contoh: 40"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium"
+                      />
                     </div>
                   </div>
                 </div>
 
-                {/* UPLOAD */}
+                {/* RIGHT COLUMN (UPLOAD) */}
                 <div>
-
-                  <label className="border-2 border-dashed border-orange-300 rounded-3xl bg-orange-50 min-h-[320px] flex flex-col items-center justify-center text-center px-8 cursor-pointer hover:bg-orange-100 transition">
-
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Foto Fasilitas</label>
+                  <label className="border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 min-h-[220px] flex flex-col items-center justify-center text-center px-6 cursor-pointer hover:bg-orange-50 hover:border-orange-300 transition-colors group">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleImage}
                       className="hidden"
                     />
-
-                    <span className="material-symbols-outlined text-orange-500 text-6xl md:text-7xl mb-4">
-                      cloud_upload
-                    </span>
-
-                    <h3 className="text-orange-500 font-semibold text-xl md:text-2xl mb-3">
-                      Unggah Foto Fasilitas
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                      <span className="material-symbols-outlined text-gray-400 group-hover:text-orange-500 text-[32px] transition-colors">
+                        cloud_upload
+                      </span>
+                    </div>
+                    <h3 className="text-gray-700 font-bold text-sm mb-1 group-hover:text-orange-600 transition-colors">
+                      Klik untuk unggah foto
                     </h3>
-
-                    <p className="text-gray-500 leading-relaxed text-sm">
-                      Klik untuk memilih file
+                    <p className="text-gray-400 text-xs font-medium">
+                      Format: JPG, PNG (Max 5MB)
                     </p>
-
-                    <p className="text-gray-400 mt-5 text-sm">
-                      JPG, PNG - Max 5MB
-                    </p>
-
+                    
+                    {/* Nama File Terpilih */}
                     {formData.gambar && (
-                      <p className="mt-4 text-sm text-orange-600 font-medium break-all">
-                        {formData.gambar.name}
-                      </p>
+                      <div className="mt-4 px-3 py-1.5 bg-orange-100 rounded-lg max-w-full">
+                        <p className="text-[11px] text-orange-700 font-bold truncate">
+                          {formData.gambar.name}
+                        </p>
+                      </div>
                     )}
-
                   </label>
                 </div>
               </div>
 
-              {/* JADWAL */}
-              <div className="border border-gray-200 rounded-3xl p-4 md:p-6 mt-10">
-
-                {jadwal.map((item, index) => (
-
-                  <div
-                    key={index}
-                    className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5 items-end"
+              {/* JADWAL OPERASIONAL */}
+              <div className="mt-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-orange-500 bg-orange-50 p-2 rounded-lg">
+                      schedule
+                    </span>
+                    <h2 className="text-lg font-bold text-gray-800">Jadwal Operasional</h2>
+                  </div>
+                  <button
+                    onClick={tambahJadwal}
+                    className="text-orange-500 hover:text-orange-600 font-bold text-sm flex items-center gap-1 transition-colors"
                   >
+                    <span className="material-symbols-outlined text-[18px]">add</span> Tambah Hari
+                  </button>
+                </div>
 
-                    {/* HARI */}
-                    <div className="lg:col-span-3">
-
-                      <label className="block font-semibold text-gray-700 mb-3">
-                        Hari
-                      </label>
-
+                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 space-y-3">
+                  {jadwal.map((item, index) => (
+                    <div key={index} className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
                       <select
                         value={item.hari}
-                        onChange={(e) =>
-                          handleJadwalChange(
-                            index,
-                            "hari",
-                            e.target.value
-                          )
-                        }
-                        className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none"
+                        onChange={(e) => handleJadwalChange(index, "hari", e.target.value)}
+                        className="w-full sm:w-[150px] bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm font-medium cursor-pointer focus:border-orange-400 capitalize"
                       >
                         <option value="senin">Senin</option>
                         <option value="selasa">Selasa</option>
@@ -486,107 +363,52 @@ const TambahFasilitas = () => {
                         <option value="minggu">Minggu</option>
                       </select>
 
-                    </div>
-
-                    {/* BUKA */}
-                    <div className="lg:col-span-3">
-
-                      <label className="block font-semibold text-gray-700 mb-3">
-                        Jam Buka
-                      </label>
-
-                      <input
-                        type="time"
-                        value={item.jam_buka}
-                        onChange={(e) =>
-                          handleJadwalChange(
-                            index,
-                            "jam_buka",
-                            e.target.value
-                          )
-                        }
-                        className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none"
-                      />
-
-                    </div>
-
-                    {/* SD */}
-                    <div className="hidden lg:flex lg:col-span-1 justify-center items-center pb-4">
-
-                      <span className="font-semibold text-gray-600">
-                        s/d
-                      </span>
-
-                    </div>
-
-                    {/* TUTUP */}
-                    <div className="lg:col-span-3">
-
-                      <label className="block font-semibold text-gray-700 mb-3 lg:opacity-0">
-                        Jam Tutup
-                      </label>
-
-                      <input
-                        type="time"
-                        value={item.jam_tutup}
-                        onChange={(e) =>
-                          handleJadwalChange(
-                            index,
-                            "jam_tutup",
-                            e.target.value
-                          )
-                        }
-                        className="w-full border border-gray-300 rounded-2xl px-5 py-4 outline-none"
-                      />
-
-                    </div>
-
-                    {/* DELETE */}
-                    <div className="lg:col-span-2">
+                      <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <input
+                          type="time"
+                          value={item.jam_buka}
+                          onChange={(e) => handleJadwalChange(index, "jam_buka", e.target.value)}
+                          className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm font-medium focus:border-orange-400"
+                        />
+                        <span className="text-gray-400 text-sm font-bold">-</span>
+                        <input
+                          type="time"
+                          value={item.jam_tutup}
+                          onChange={(e) => handleJadwalChange(index, "jam_tutup", e.target.value)}
+                          className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm font-medium focus:border-orange-400"
+                        />
+                      </div>
 
                       <button
                         onClick={() => hapusJadwal(index)}
-                        className="w-full border-2 border-orange-500 rounded-2xl py-4 flex items-center justify-center text-orange-500 hover:bg-orange-50 transition"
+                        className="ml-auto w-10 h-10 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Hapus Jadwal"
                       >
-                        <span className="material-symbols-outlined">
-                          delete
-                        </span>
+                        <span className="material-symbols-outlined text-[20px]">delete</span>
                       </button>
-
                     </div>
-                  </div>
-                ))}
-
-                {/* BUTTON */}
-                <div className="flex justify-end">
-
-                  <button
-                    onClick={tambahJadwal}
-                    className="bg-orange-500 hover:bg-orange-600 transition text-white px-8 py-4 rounded-2xl font-semibold"
-                  >
-                    + Tambah
-                  </button>
-
+                  ))}
                 </div>
               </div>
 
               {/* DESKRIPSI */}
               <div className="mt-10">
-
-                <label className="block font-semibold text-gray-700 mb-3">
-                  Deskripsi Fasilitas
-                </label>
-
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="material-symbols-outlined text-orange-500 bg-orange-50 p-2 rounded-lg">
+                    description
+                  </span>
+                  <h2 className="text-lg font-bold text-gray-800">Deskripsi Lengkap</h2>
+                </div>
                 <textarea
-                  rows="6"
+                  rows="4"
                   name="deskripsi"
                   value={formData.deskripsi}
                   onChange={handleChange}
-                  placeholder="Jelaskan keunggulan, peraturan, dan kondisi fasilitas"
-                  className="w-full border border-gray-300 rounded-3xl px-5 py-5 outline-none resize-none focus:ring-2 focus:ring-orange-300"
+                  placeholder="Tuliskan keunggulan, fasilitas pendukung, atau peraturan khusus..."
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-5 py-4 outline-none resize-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium"
                 />
-
               </div>
+
             </div>
           </div>
         </div>

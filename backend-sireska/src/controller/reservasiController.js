@@ -437,3 +437,16 @@ exports.rejectReservasi = async (req, res) => {
         res.status(500).json({ message: "Terjadi kesalahan server" });
     }
 };
+
+exports.deleteReservasi = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.reservasi.delete({
+            where: { reservasi_id: parseInt(id) }
+        });
+        res.json({ message: "Reservasi berhasil dihapus" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Gagal menghapus reservasi" });
+    }
+};

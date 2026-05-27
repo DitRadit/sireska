@@ -4,17 +4,17 @@ import AdminSidebar from '../../components/sidebarComponent'
 
 const stats = [
   {
-    title: 'lapangan tersedia',
+    title: 'Lapangan Tersedia',
     value: 100,
     icon: 'sports_soccer',
   },
   {
-    title: 'antrian pesanan',
+    title: 'Antrian Pesanan',
     value: 24,
     icon: 'groups',
   },
   {
-    title: 'lapangan digunakan',
+    title: 'Lapangan Digunakan',
     value: 76,
     icon: 'check_circle',
   },
@@ -22,121 +22,123 @@ const stats = [
 
 const menuCards = [
   {
-    title: 'kelola pengguna',
+    title: 'Kelola Pengguna',
     icon: 'group',
     color: 'bg-orange-500',
+    path: '/admin/pengguna'
   },
   {
-    title: 'lihat laporan',
+    title: 'Lihat Laporan',
     icon: 'description',
-    color: 'bg-orange-400',
+    color: 'bg-orange-400 hover:bg-orange-500',
+    path: '/admin/laporan'
   },
   {
-    title: 'cek pesanan',
+    title: 'Cek Pesanan',
     icon: 'list_alt',
-    color: 'bg-orange-400',
+    color: 'bg-orange-400 hover:bg-orange-500',
+    path: '/admin/pesanan'
   },
   {
-    title: 'tambah fasilitas',
+    title: 'Tambah Fasilitas',
     icon: 'sports_volleyball',
-    color: 'bg-orange-400',
+    color: 'bg-orange-400 hover:bg-orange-500',
+    path: '/admin/fasilitas/tambah'
   },
 ]
 
 const activities = [
   {
     time: '12.30',
-    text: 'booking baru lapangan a',
+    text: 'Booking baru Lapangan A',
   },
   {
     time: '13.00',
-    text: 'booking baru lapangan b',
+    text: 'Booking baru Lapangan B',
   },
   {
     time: '14.15',
-    text: 'booking baru lapangan c',
+    text: 'Booking baru Lapangan C',
   },
   {
     time: '15.20',
-    text: 'booking baru lapangan d',
+    text: 'Booking baru Lapangan D',
   },
 ]
 
 export default function Dashboard() {
   const navigate = useNavigate()
 
-const [user] = useState(() => {
-  try {
-    const userString = localStorage.getItem('user')
+  const [user] = useState(() => {
+    try {
+      const userString = localStorage.getItem('user')
 
-    if (!userString) {
-      return { name: 'admin' }
+      if (!userString) {
+        return { name: 'Admin' }
+      }
+
+      const parsed = JSON.parse(userString)
+
+      return {
+        name:
+          parsed?.nama_lengkap ||
+          parsed?.user?.nama_lengkap ||
+          'Admin',
+      }
+    } catch (err) {
+      console.error(err)
+      return {
+        name: 'Admin',
+      }
     }
-
-    const parsed = JSON.parse(userString)
-
-    return {
-      name:
-        parsed?.nama_lengkap ||
-        parsed?.user?.nama_lengkap ||
-        'admin',
-    }
-  } catch (err) {
-    console.error(err)
-
-    return {
-      name: 'admin',
-    }
-  }
-})
+  })
 
   return (
     <>
       {/* google font + icons */}
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=poppins:wght@300;400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
       />
-
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/icon?family=Material+Icons"
       />
 
-      <div className="min-h-screen bg-[#f7f5f4] flex font-[Poppins]">
+      {/* Background diganti sedikit lebih bersih (gray-50) */}
+      <div className="min-h-screen bg-gray-50 flex font-[Poppins]">
         {/* sidebar */}
         <AdminSidebar />
 
         {/* content */}
         <main className="flex-1 flex flex-col overflow-hidden ml-[260px]">
           {/* header */}
-          <header className="bg-white border-b border-gray-200 px-8 py-5 flex items-center justify-between">
+          <header className="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
             {/* search */}
             <div className="relative w-full max-w-sm">
               <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">
                 search
               </span>
-
               <input
                 type="text"
-                placeholder="search"
-                className="w-full bg-[#f5f3f2] border border-gray-200 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:border-orange-400"
+                placeholder="Cari data..."
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-11 pr-4 text-sm outline-none focus:border-orange-400 focus:bg-white transition-all"
               />
             </div>
 
             {/* actions */}
-            <div className="flex items-center gap-4">
-              <button className="w-12 h-12 rounded-2xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition">
-                <span className="material-icons text-gray-600">
+            <div className="flex items-center gap-3">
+              <button className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition text-gray-500">
+                <span className="material-icons text-[20px]">
                   notifications
                 </span>
               </button>
 
               <button
                 onClick={() => navigate('/profile')}
-                className="w-12 h-12 rounded-2xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition"
+                className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition text-gray-500"
               >
-                <span className="material-icons text-gray-600">
+                <span className="material-icons text-[20px]">
                   person
                 </span>
               </button>
@@ -145,37 +147,44 @@ const [user] = useState(() => {
 
           {/* dashboard body */}
           <div className="flex-1 p-8 grid grid-cols-12 gap-6 overflow-y-auto">
-            {/* left */}
-            <div className="col-span-12 xl:col-span-9 flex flex-col gap-6">
+            
+            {/* LEFT COLUMN (Disesuaikan proporsinya jadi col-span-8) */}
+            <div className="col-span-12 xl:col-span-8 flex flex-col gap-6">
+              
               {/* hero */}
-              <div className="bg-[#f3f0ef] rounded-[32px] p-10">
-                <h1 className="text-5xl font-bold text-orange-500 capitalize">
-                  hello {user.name}!
-                </h1>
-
-                <p className="text-gray-500 mt-4 max-w-2xl leading-relaxed">
-                  selamat datang di dashboard admin sireska.
-                  kelola fasilitas olahraga, pantau pesanan,
-                  dan lihat laporan sistem secara realtime.
-                </p>
-
-                <button className="mt-7 bg-orange-500 hover:bg-orange-600 transition text-white px-8 py-3 rounded-2xl text-lg font-semibold shadow-lg shadow-orange-200">
-                  pesanan baru
-                </button>
+              <div className="bg-white rounded-[1.5rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden">
+                <div className="absolute -right-10 -top-10 w-48 h-48 bg-orange-50 rounded-full blur-3xl opacity-60"></div>
+                <div className="relative z-10">
+                  <h1 className="text-3xl font-bold text-gray-800 capitalize">
+                    Halo, <span className="text-orange-500">{user.name}!</span>
+                  </h1>
+                  <p className="text-gray-500 mt-2 max-w-xl text-sm leading-relaxed">
+                    Selamat datang di dashboard admin SiResKa. Kelola fasilitas olahraga, pantau pesanan, dan lihat laporan sistem secara realtime.
+                  </p>
+                  <button onClick={() => navigate('/admin/pesanan')} className="mt-6 bg-orange-500 hover:bg-orange-600 transition text-white px-6 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-orange-200/50 flex items-center gap-2 w-max">
+                    <span className="material-icons text-[18px]">add_circle</span>
+                    Pesanan Baru
+                  </button>
+                </div>
               </div>
 
               {/* menu cards */}
-              <div className="bg-[#f3f0ef] rounded-[32px] p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {menuCards.map((item, index) => (
                   <div
                     key={index}
-                    className={`${item.color} rounded-[28px] p-8 text-white hover:scale-[1.02] transition duration-300 cursor-pointer shadow-lg`}
+                    onClick={() => item.path && navigate(item.path)}
+                    className={`${item.color} rounded-[1.5rem] p-6 text-white hover:-translate-y-1 transition-all duration-300 cursor-pointer shadow-md flex flex-col justify-between min-h-[140px] group`}
                   >
-                    <span className="material-icons text-[52px]">
-                      {item.icon}
-                    </span>
-
-                    <h2 className="text-3xl font-semibold mt-8 capitalize">
+                    <div className="flex justify-between items-start">
+                      <span className="material-icons text-[36px] bg-white/20 p-2.5 rounded-xl">
+                        {item.icon}
+                      </span>
+                      <span className="material-icons opacity-0 group-hover:opacity-100 transition-opacity">
+                        arrow_forward
+                      </span>
+                    </div>
+                    <h2 className="text-lg font-bold mt-4 tracking-wide">
                       {item.title}
                     </h2>
                   </div>
@@ -183,57 +192,58 @@ const [user] = useState(() => {
               </div>
             </div>
 
-            {/* right */}
-            <div className="col-span-12 xl:col-span-3 flex flex-col gap-5">
+            {/* RIGHT COLUMN (Disesuaikan proporsinya jadi col-span-4) */}
+            <div className="col-span-12 xl:col-span-4 flex flex-col gap-6">
+              
               {/* stats */}
-              {stats.map((item, index) => (
-                <div
-                  key={index}
-                  className="bg-[#f3f0ef] rounded-[28px] p-6 flex items-center gap-5"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm">
-                    <span className="material-icons text-gray-700 text-[30px]">
-                      {item.icon}
-                    </span>
+              <div className="grid grid-cols-1 gap-4">
+                {stats.map((item, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-2xl p-5 flex items-center gap-4 border border-gray-100 shadow-sm"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+                      <span className="material-icons text-[24px]">
+                        {item.icon}
+                      </span>
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800 leading-none">
+                        {item.value}
+                      </h2>
+                      <p className="text-gray-500 text-xs font-medium uppercase tracking-wide mt-1">
+                        {item.title}
+                      </p>
+                    </div>
                   </div>
-
-                  <div>
-                    <h2 className="text-4xl font-bold text-gray-700">
-                      {item.value}
-                    </h2>
-
-                    <p className="text-gray-500 text-sm capitalize">
-                      {item.title}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
 
               {/* activity */}
-              <div className="bg-white rounded-[28px] overflow-hidden border border-gray-200">
-                <div className="bg-orange-500 text-white px-6 py-5">
-                  <h2 className="text-2xl font-semibold">
-                    today activity
+              <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm flex flex-col h-full">
+                <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                  <h2 className="text-base font-bold text-gray-800">
+                    Aktivitas Hari Ini
                   </h2>
                 </div>
 
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-gray-50 p-2">
                   {activities.map((item, index) => (
                     <div
                       key={index}
-                      className="px-5 py-4 flex items-center justify-between gap-4"
+                      className="px-4 py-3 flex items-start gap-4 hover:bg-gray-50 rounded-xl transition-colors"
                     >
-                      <span className="text-sm font-bold text-gray-700">
+                      <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold shrink-0 mt-0.5">
                         {item.time}
                       </span>
-
-                      <span className="text-sm text-gray-500 text-right capitalize">
+                      <span className="text-sm text-gray-600 font-medium">
                         {item.text}
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
+              
             </div>
           </div>
         </main>
