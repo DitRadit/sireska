@@ -17,6 +17,7 @@ import TambahFasilitas from './pages/admin/TambahFasilitas'
 import Fasilitas from './pages/admin/Fasilitas'
 
 import './styles/main.css'
+import FasilitasDetailPage from './pages/FasilitasDetailPage'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -37,6 +38,14 @@ function App() {
       {/* USER ROUTE */}
       <Route path="/home" element={token ? (isAdmin ? <Navigate to="/admin/dashboard" /> : <Home />) : <Navigate to="/login" />} />
       <Route path="/fasilitas" element={token ? (isAdmin ? <Navigate to="/admin/fasilitas" /> : <FasilitasUser />) : <Navigate to="/login" />} />
+<Route
+  path="/fasilitas/:id"
+  element={
+    token
+      ? <FasilitasDetailPage />
+      : <Navigate to="/login" />
+  }
+/>
       
       {/* RUTE BOOKING (Mengarah ke komponen BookingPage) */}
       <Route path="/booking/:id" element={token ? (isAdmin ? <Navigate to="/admin/dashboard" /> : <BookingPage />) : <Navigate to="/login" />} />

@@ -44,22 +44,22 @@ model User {
 }
 
 model Fasilitas {
-  fasilitas_id   Int      @id @default(autoincrement()) @db.UnsignedInt
-  nama_fasilitas String   @db.VarChar(100)
-  deskripsi      String?  @db.Text
-  lokasi         String?  @db.VarChar(150)
-  kapasitas      Int?     @db.UnsignedSmallInt
-  gambar_url     String?  @db.VarChar(500)
-  gambar_public_id String? @db.VarChar(255)
+  fasilitas_id     Int      @id @default(autoincrement()) @db.UnsignedInt
+  nama_fasilitas   String   @db.VarChar(100)
+  deskripsi        String?  @db.Text
+  lokasi           String?  @db.VarChar(150)
+  alamat           String?  @db.VarChar(255)
+  latitude         Float?
+  longitude        Float?
+  kapasitas        Int?     @db.UnsignedSmallInt
+  gambar_url       String?  @db.VarChar(500)
+  gambar_public_id String?  @db.VarChar(255)
+  status           StatusFasilitas @default(aktif)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
   reservasi Reservasi[]
-
-  status         StatusFasilitas @default(aktif)
-
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-
-  jadwal         JadwalFasilitas[]
+  jadwal    JadwalFasilitas[]
 }
 
 model JadwalFasilitas {

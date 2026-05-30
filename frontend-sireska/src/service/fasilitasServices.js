@@ -21,7 +21,10 @@ const fasilitasService = {
     formData.append("nama_fasilitas", data.nama_fasilitas);
     formData.append("deskripsi", data.deskripsi || "");
     formData.append("lokasi", data.lokasi || "");
-    formData.append("tipe", data.tipe || "Outdoor"); // <-- BUG FIX: Tipe ditambahkan
+    formData.append("tipe", data.tipe || "Outdoor");
+    formData.append("alamat", data.alamat || "");
+    formData.append("latitude", data.latitude || "");
+    formData.append("longitude", data.longitude || "");
     formData.append("kapasitas", data.kapasitas || "");
     formData.append("status", data.status || "aktif");
 
@@ -50,12 +53,9 @@ const fasilitasService = {
 
     // Cara yang lebih bersih (Clean Code) dibanding pakai banyak if
     const textFields = [
-      "nama_fasilitas",
-      "deskripsi",
-      "lokasi",
-      "tipe", // <-- BUG FIX: Tipe ditambahkan
-      "kapasitas",
-      "status"
+      "nama_fasilitas", "deskripsi", "lokasi", "alamat",
+      "latitude", "longitude",  
+      "tipe", "kapasitas", "status",
     ];
 
     // Otomatis mengecek dan memasukkan data teks yang dikirim

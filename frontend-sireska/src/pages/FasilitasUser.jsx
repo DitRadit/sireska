@@ -5,6 +5,25 @@ import fasilitasService from "../service/fasilitasServices";
 import Navbar from "../components/headerComponent"; 
 import Footer from "../components/footerComponent"; 
 
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+const OrangeIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+});
+
 const FasilitasUser = () => {
   const navigate = useNavigate();
   const [fasilitas, setFasilitas] = useState([]);
@@ -194,47 +213,103 @@ const FasilitasUser = () => {
             
           </div>
 
-          {/* =======================================================
-              KOLOM KANAN: Peta (Sticky Fix)
-          ======================================================= */}
-          <div className="hidden lg:block lg:w-[45%]">
-            
-            <div className="sticky top-[100px] h-[calc(100vh-140px)] min-h-[450px] bg-gray-200 rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
-              
-              <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15841.650630730164!2d107.62534571253434!3d-6.973007021752174!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e68e9adf177bf8d%3A0x437398556f9fa03!2sTelkom%20University!5e0!3m2!1sen!2sid!4v1700000000000!5m2!1sen!2sid" 
-                className="w-full h-full border-0 grayscale-[10%] contrast-[1.05]" 
-                allowFullScreen="" 
-                loading="lazy" 
-                referrerPolicy="no-referrer-when-downgrade"
-              ></iframe>
+{/* =======================================================
+    KOLOM KANAN: Peta Leaflet
+======================================================= */}
+<div className="hidden lg:block lg:w-[45%]">
+  <div className="sticky top-[100px] h-[calc(100vh-140px)] min-h-[450px] rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
 
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 w-11/12 max-w-[280px] bg-white/95 backdrop-blur-md rounded-xl shadow-lg p-1.5 flex items-center border border-gray-100">
-                <span className="material-symbols-outlined text-gray-400 pl-2 text-[18px]">search</span>
-                <input 
-                  type="text" 
-                  placeholder="Cari fasilitas..." 
-                  className="flex-1 bg-transparent outline-none text-[11px] font-medium px-2 text-gray-700 placeholder-gray-400"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+    {/* Search bar */}
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 w-11/12 max-w-[280px] bg-white/95 backdrop-blur-md rounded-xl shadow-lg p-1.5 flex items-center border border-gray-100 z-[1000]">
+      <span className="material-symbols-outlined text-gray-400 pl-2 text-[18px]">search</span>
+      <input
+        type="text"
+        placeholder="Cari fasilitas..."
+        className="flex-1 bg-transparent outline-none text-[11px] font-medium px-2 text-gray-700 placeholder-gray-400"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+    </div>
+
+    <MapContainer
+      center={[-6.973007, 107.630985]}
+      zoom={16}
+      className="w-full h-full"
+      scrollWheelZoom={true}
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      {filteredFasilitas
+        .filter((item) => item.latitude && item.longitude)
+        .map((item) => (
+          <Marker
+            key={item.fasilitas_id}
+            position={[item.latitude, item.longitude]}
+            icon={OrangeIcon}
+          >
+            <Popup maxWidth={200}>
+              <div style={{ width: "180px", fontFamily: "Poppins, sans-serif" }}>
+                <img
+                  src={item.gambar_url || "https://placehold.co/200x120/f8f9fa/a1a1aa?text=No+Image"}
+                  alt={item.nama_fasilitas}
+                  style={{ width: "100%", height: "90px", objectFit: "cover", borderRadius: "8px", marginBottom: "8px" }}
                 />
-                <div className="h-4 w-px bg-gray-200 mx-1"></div>
-                <button className="bg-orange-500 text-white px-3 py-1 rounded-md text-[11px] font-bold shadow-sm hover:bg-orange-600 transition-colors">
-                  Cari
-                </button>
-              </div>
-
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-bounce">
-                <div className="relative">
-                    <span className="material-symbols-outlined text-orange-500 text-[40px] drop-shadow-md">
-                      location_on
+                <p style={{ fontWeight: "700", fontSize: "12px", color: "#1f2937", marginBottom: "2px" }}>
+                  {item.nama_fasilitas}
+                </p>
+                <p style={{ fontSize: "10px", color: "#9ca3af", marginBottom: "6px" }}>
+                  {item.alamat || item.lokasi || "-"}
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+                  <span style={{
+                    padding: "2px 8px",
+                    borderRadius: "999px",
+                    fontSize: "10px",
+                    fontWeight: "700",
+                    backgroundColor: item.status === "aktif" ? "#dcfce7" : "#fee2e2",
+                    color: item.status === "aktif" ? "#16a34a" : "#dc2626",
+                  }}>
+                    {item.status === "aktif" ? "Tersedia" : item.status}
+                  </span>
+                  {item.kapasitas && (
+                    <span style={{ fontSize: "10px", color: "#9ca3af" }}>
+                      · {item.kapasitas} org
                     </span>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-1 bg-black/20 rounded-full blur-[1px]"></div>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button
+                    onClick={() => navigate(`/fasilitas/${item.fasilitas_id}`)}
+                    style={{
+                      flex: 1, backgroundColor: "#fff", color: "#374151",
+                      fontSize: "10px", fontWeight: "700", padding: "6px",
+                      borderRadius: "8px", border: "1px solid #e5e7eb", cursor: "pointer",
+                    }}
+                  >
+                    Detail
+                  </button>
+                  <button
+                    onClick={() => navigate(`/booking/${item.fasilitas_id}`)}
+                    style={{
+                      flex: 1, backgroundColor: "#f97316", color: "white",
+                      fontSize: "10px", fontWeight: "700", padding: "6px",
+                      borderRadius: "8px", border: "none", cursor: "pointer",
+                    }}
+                  >
+                    Pesan
+                  </button>
                 </div>
               </div>
+            </Popup>
+          </Marker>
+        ))}
+    </MapContainer>
 
-            </div>
-          </div>
+  </div>
+</div>
 
         </main>
 
