@@ -3,11 +3,13 @@ import pesananService from "../service/pesananService";
 import Navbar from "../components/headerComponent";
 import Footer from "../components/footerComponent";
 import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
 const PesananPage = () => {
     const [pesanan, setPesanan] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("Semua");
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchPesanan = async () => {
@@ -29,25 +31,7 @@ const PesananPage = () => {
     });
 
     // Fungsi Detail dengan SweetAlert
-    const handleDetail = (item) => {
-        Swal.fire({
-            title: 'Detail Pesanan',
-            html: `
-                <div style="text-align: left; font-size: 14px; padding: 10px;">
-                    <p><b>Fasilitas:</b> ${item.fasilitas?.nama_fasilitas || '-'}</p>
-                    <p><b>Lokasi:</b> ${item.fasilitas?.lokasi || 'Sport Center'}</p>
-                    <p><b>Tanggal:</b> ${new Date(item.tanggal).toLocaleDateString('id-ID')}</p>
-                    <p><b>Waktu:</b> ${item.jadwal?.jam_buka} - ${item.jadwal?.jam_tutup}</p>
-                    <p><b>Keperluan:</b> ${item.keperluan || '-'}</p>
-                    <hr style="margin: 15px 0;">
-                    <p><b>Status:</b> <span style="text-transform: uppercase; font-weight: bold; color: ${item.status === 'ditolak' ? '#dc2626' : '#ea580c'}">${item.status}</span></p>
-                    ${item.catatan_admin ? `<p><b>Catatan Admin:</b> ${item.catatan_admin}</p>` : ''}
-                </div>
-            `,
-            confirmButtonText: 'Tutup',
-            confirmButtonColor: '#f97316'
-        });
-    };
+    const handleDetail = (id) => navigate(`/pesanan/${id}`);
 
     const getStatusColor = (status) => {
         if (status === "menunggu") return "bg-orange-100 text-orange-600";
@@ -97,8 +81,8 @@ const PesananPage = () => {
                                 <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold uppercase ${getStatusColor(item.status)}`}>
                                     {item.status}
                                 </span>
-                                <button 
-                                    onClick={() => handleDetail(item)} 
+                                <button
+                                    onClick={() => handleDetail(item.reservasi_id)}
                                     className="px-4 py-2 bg-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-200 transition-colors"
                                 >
                                     Lihat Detail

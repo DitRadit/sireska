@@ -4,38 +4,36 @@ const { cloudinary } = require("../config/cloudinary");
 
 const prisma = new PrismaClient();
 
+// Tambahkan konstanta ini di atas, setelah const prisma = new PrismaClient();
+const ROLE_GUEST = 3;
+
+const filterHarga = (fasilitas, role_id) => {
+    const isGuest = !role_id || role_id === ROLE_GUEST;
+    if (!isGuest) {
+        const { harga_per_jam, ...rest } = fasilitas;
+        return rest;
+    }
+    return fasilitas;
+};
+
 // ─── GET SEMUA FASILITAS ───────────────────────────────────────────────────────
 exports.getAllFasilitas = async (req, res) => {
     try {
         const { status, search } = req.query;
-
         const where = {};
+        if (status) where.status = status;
+        if (search) where.nama_fasilitas = { contains: search };
 
-        if (status) {
-            where.status = status;
-        }
-
-        if (search) {
-            where.nama_fasilitas = {
-                contains: search,
-            };
-        }
-
-        const fasilitas = await prisma.fasilitas.findMany({
+        const fasilitasList = await prisma.fasilitas.findMany({
             where,
-            include: {
-                jadwal: {
-                    orderBy: { hari: "asc" },
-                },
-            },
+            include: { jadwal: { orderBy: { hari: "asc" } } },
             orderBy: { created_at: "desc" },
         });
 
-        res.json({
-            message: "Berhasil ambil data fasilitas",
-            total: fasilitas.length,
-            data: fasilitas,
-        });
+        const role_id = req.user?.role_id; // undefined jika tidak login
+        const data = fasilitasList.map((f) => filterHarga(f, role_id));
+
+        res.json({ message: "Berhasil ambil data fasilitas", total: data.length, data });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Terjadi kesalahan server" });
@@ -45,25 +43,18 @@ exports.getAllFasilitas = async (req, res) => {
 // ─── GET DETAIL FASILITAS ──────────────────────────────────────────────────────
 exports.getFasilitasById = async (req, res) => {
     const { id } = req.params;
-
     try {
         const fasilitas = await prisma.fasilitas.findUnique({
             where: { fasilitas_id: parseInt(id) },
-            include: {
-                jadwal: {
-                    orderBy: { hari: "asc" },
-                },
-            },
+            include: { jadwal: { orderBy: { hari: "asc" } } },
         });
 
-        if (!fasilitas) {
-            return res.status(404).json({ message: "Fasilitas tidak ditemukan" });
-        }
+        if (!fasilitas) return res.status(404).json({ message: "Fasilitas tidak ditemukan" });
 
-        res.json({
-            message: "Berhasil ambil detail fasilitas",
-            data: fasilitas,
-        });
+        const role_id = req.user?.role_id;
+        const data = filterHarga(fasilitas, role_id);
+
+        res.json({ message: "Berhasil ambil detail fasilitas", data });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Terjadi kesalahan server" });
@@ -72,7 +63,7 @@ exports.getFasilitasById = async (req, res) => {
 
 // ─── TAMBAH FASILITAS ──────────────────────────────────────────────────────────
 exports.createFasilitas = async (req, res) => {
-  const { nama_fasilitas, deskripsi, lokasi, alamat, latitude, longitude, kapasitas, status, jadwal } = req.body;
+  const { nama_fasilitas, deskripsi, lokasi, alamat, latitude, longitude, kapasitas, status, jadwal, harga_per_jam } = req.body;
 
   if (!nama_fasilitas) {
     return res.status(400).json({ message: "Nama fasilitas wajib diisi" });
@@ -108,7 +99,12 @@ exports.createFasilitas = async (req, res) => {
         gambar_url,
         gambar_public_id,
         status: status || "aktif",
-        jadwal: { create: jadwalData },
+        harga_per_jam: harga_per_jam
+            ? parseInt(harga_per_jam)
+            : null,
+        jadwal: {
+            create: jadwalData
+        },
       },
       include: { jadwal: true },
     });
@@ -123,7 +119,7 @@ exports.createFasilitas = async (req, res) => {
 // ─── EDIT FASILITAS ────────────────────────────────────────────────────────────
 exports.updateFasilitas = async (req, res) => {
   const { id } = req.params;
-  const { nama_fasilitas, deskripsi, lokasi, alamat, latitude, longitude, kapasitas, status, jadwal } = req.body;
+  const { nama_fasilitas, deskripsi, lokasi, alamat, latitude, longitude, kapasitas, status, jadwal, harga_per_jam } = req.body;
 
   try {
     const existing = await prisma.fasilitas.findUnique({
@@ -155,6 +151,11 @@ exports.updateFasilitas = async (req, res) => {
     if (longitude !== undefined) updateData.longitude = longitude ? parseFloat(longitude) : null;
     if (kapasitas !== undefined) updateData.kapasitas = parseInt(kapasitas);
     if (status !== undefined) updateData.status = status;
+    if (harga_per_jam !== undefined) {
+        updateData.harga_per_jam = harga_per_jam
+            ? parseInt(harga_per_jam)
+            : null;
+    }
 
     if (jadwal !== undefined) {
       const parsed = typeof jadwal === "string" ? JSON.parse(jadwal) : jadwal;

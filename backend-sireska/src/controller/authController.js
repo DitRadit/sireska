@@ -5,51 +5,62 @@ const { generateOTP, saveOTP, sendOTP, verifyOTP } = require("../utils/otp");
 
 const prisma = new PrismaClient();
 
+// Role IDs
+const ROLE_USER  = 2; // mahasiswa/dosen dengan NIM/NIP
+const ROLE_GUEST = 3; // tamu tanpa NIM/NIP
+
 // REGISTER
 exports.register = async (req, res) => {
     const { nim_nip, nama_lengkap, email, password } = req.body;
 
-    if (!nim_nip || !nama_lengkap || !email || !password) {
-        return res.status(400).json({ message: "Semua field wajib diisi" });
+    // nim_nip boleh kosong → jadi guest
+    if (!nama_lengkap || !email || !password) {
+        return res.status(400).json({ message: "nama_lengkap, email, dan password wajib diisi" });
     }
 
     try {
-        const existingUser = await prisma.user.findFirst({
-            where: {
-                OR: [{ email }, { nim_nip }]
-            }
-        });
+        // Cek duplikat email
+        const existingByEmail = await prisma.user.findUnique({ where: { email } });
+        if (existingByEmail) {
+            return res.status(409).json({ message: "Email sudah digunakan" });
+        }
 
-        if (existingUser) {
-            return res.status(409).json({
-                message: "Email atau NIM/NIP sudah digunakan"
-            });
+        // Cek duplikat NIM/NIP hanya jika diisi
+        if (nim_nip) {
+            const existingByNimNip = await prisma.user.findUnique({ where: { nim_nip } });
+            if (existingByNimNip) {
+                return res.status(409).json({ message: "NIM/NIP sudah digunakan" });
+            }
         }
 
         const hash = await bcrypt.hash(password, 10);
 
+        // Tentukan role: jika ada NIM/NIP → user biasa, jika tidak → guest
+        const role_id = nim_nip ? ROLE_USER : ROLE_GUEST;
+
         const user = await prisma.user.create({
             data: {
-                nim_nip,
+                nim_nip:      nim_nip || null,
                 nama_lengkap,
                 email,
                 password_hash: hash,
-                role_id: 2,
-                is_verified: false
-            }
+                role_id,
+                is_verified:  false,
+            },
         });
 
         const otp = generateOTP();
-
         saveOTP(email, otp);
-
         await sendOTP(email, otp);
 
-      res.status(201).json({
-        message: "Register berhasil, cek email untuk OTP",
-        user_id: user.user_id,
-        email: user.email  
-    });
+        const tipeAkun = nim_nip ? "pengguna" : "guest";
+
+        res.status(201).json({
+            message:  `Register berhasil sebagai ${tipeAkun}, cek email untuk OTP`,
+            user_id:  user.user_id,
+            email:    user.email,
+            tipe:     tipeAkun,
+        });
 
     } catch (err) {
         console.error(err);
@@ -66,9 +77,7 @@ exports.login = async (req, res) => {
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { email }
-        });
+        const user = await prisma.user.findUnique({ where: { email } });
 
         if (!user) {
             return res.status(404).json({ message: "User tidak ditemukan" });
@@ -77,38 +86,33 @@ exports.login = async (req, res) => {
         if (!user.is_verified) {
             return res.status(403).json({
                 message: "Akun belum diverifikasi, cek email untuk OTP",
-                email: user.email  
+                email:   user.email,
             });
         }
 
         const isValid = await bcrypt.compare(password, user.password_hash);
-
         if (!isValid) {
             return res.status(401).json({ message: "Password salah" });
         }
 
         const token = jwt.sign(
-            {
-                user_id: user.user_id,
-                role_id: user.role_id,
-            },
+            { user_id: user.user_id, role_id: user.role_id },
             process.env.JWT_SECRET,
             { expiresIn: "1d" }
         );
 
-        // --- BAGIAN YANG DIPERBAIKI ---
         res.json({
             message: "Login berhasil",
             token,
             user: {
-                user_id: user.user_id,
-                email: user.email,
-                nama_lengkap: user.nama_lengkap, 
-                nim_nip: user.nim_nip,
-                role_id: user.role_id
-            }
+                user_id:      user.user_id,
+                email:        user.email,
+                nama_lengkap: user.nama_lengkap,
+                nim_nip:      user.nim_nip,
+                role_id:      user.role_id,
+                is_guest:     user.role_id === ROLE_GUEST,
+            },
         });
-        // ------------------------------
 
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -124,23 +128,13 @@ exports.resetPassword = async (req, res) => {
     }
 
     try {
-        // Cari user berdasarkan email
-        const user = await prisma.user.findUnique({
-            where: { email }
-        });
-
+        const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
             return res.status(404).json({ message: "User dengan email tersebut tidak ditemukan" });
         }
 
-        // Hash password baru
         const hash = await bcrypt.hash(password, 10);
-
-        // Update password_hash di database
-        await prisma.user.update({
-            where: { email },
-            data: { password_hash: hash }
-        });
+        await prisma.user.update({ where: { email }, data: { password_hash: hash } });
 
         res.json({ message: "Password berhasil diperbarui" });
 
@@ -156,20 +150,22 @@ exports.getProfile = async (req, res) => {
         const user = await prisma.user.findUnique({
             where: { user_id: req.user.user_id },
             select: {
-                user_id: true,
+                user_id:      true,
                 nama_lengkap: true,
-                email: true,
-                role_id: true
-            }
+                email:        true,
+                nim_nip:      true,
+                role_id:      true,
+            },
         });
 
-        if (!user) {
-            return res.status(404).json({ message: "User tidak ditemukan" });
-        }
+        if (!user) return res.status(404).json({ message: "User tidak ditemukan" });
 
         res.json({
-            message: "Berhasil ambil profile",
-            user
+            message:  "Berhasil ambil profile",
+            user: {
+                ...user,
+                is_guest: user.role_id === ROLE_GUEST,
+            },
         });
 
     } catch (err) {
@@ -187,15 +183,11 @@ exports.verifyOtp = async (req, res) => {
 
     try {
         const result = verifyOTP(email, otp);
-
         if (!result.status) {
             return res.status(400).json({ message: result.message });
         }
 
-        await prisma.user.update({
-            where: { email },
-            data: { is_verified: true }
-        });
+        await prisma.user.update({ where: { email }, data: { is_verified: true } });
 
         res.json({ message: "Verifikasi berhasil" });
 
@@ -209,23 +201,13 @@ exports.verifyOtp = async (req, res) => {
 exports.resendOtp = async (req, res) => {
     const { email } = req.body;
 
-    if (!email) {
-        return res.status(400).json({ message: "Email wajib diisi" });
-    }
+    if (!email) return res.status(400).json({ message: "Email wajib diisi" });
 
     try {
+        const user = await prisma.user.findUnique({ where: { email } });
 
-        const user = await prisma.user.findUnique({
-            where: { email }
-        });
-
-        if (!user) {
-            return res.status(404).json({ message: "Email tidak ditemukan" });
-        }
-
-        if (user.is_verified) {
-            return res.status(400).json({ message: "Akun sudah terverifikasi" });
-        }
+        if (!user)          return res.status(404).json({ message: "Email tidak ditemukan" });
+        if (user.is_verified) return res.status(400).json({ message: "Akun sudah terverifikasi" });
 
         const otp = generateOTP();
         saveOTP(email, otp);

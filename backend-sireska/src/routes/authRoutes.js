@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const auth = require("../controller/authController");
-const authMiddleware = require("../middleware/authMiddleware");
+const { authenticate: authMiddleware } = require("../middleware/authMiddleware");
 const requireRole = require("../middleware/roleMiddleware");
 const { register, login, verifyOtp, resendOtp, getProfile, resetPassword } = require('../controller/authController');
 
