@@ -37,7 +37,7 @@ const menuCards = [
     title: 'Cek Pesanan',
     icon: 'list_alt',
     color: 'bg-orange-400 hover:bg-orange-500',
-    path: '/admin/pesanan'
+    path: '/admin/reservasi'
   },
   {
     title: 'Tambah Fasilitas',

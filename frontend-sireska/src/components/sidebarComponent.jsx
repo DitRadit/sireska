@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import logoIconOnly from "../assets/SiResKa Light Background.png";
 const SidebarComponent = () => {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem("user"));
@@ -43,7 +44,7 @@ const SidebarComponent = () => {
             <div>
                 <div className="px-6 py-6">
                     <img
-                        src="../assets/SiResKa Light Background.png"
+                        src={logoIconOnly}
                         alt="SIRESKA"
                         className="w-36 object-contain"
                     />
