@@ -125,7 +125,7 @@ const DetailPesananPage = () => {
 
               <div>
                 <label className="block text-[13px] font-bold text-gray-600 mb-2">Waktu</label>
-                <input type="text" value={`${data.jadwal?.jam_buka} - ${data.jadwal?.jam_tutup}`} disabled
+                <input type="text" value={`${data.jam_mulai} – ${data.jam_selesai}`} disabled
                   className="w-full bg-gray-100 border-none rounded-xl px-5 py-3.5 text-sm font-medium cursor-not-allowed" />
               </div>
 

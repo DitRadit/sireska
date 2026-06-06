@@ -2,35 +2,107 @@
 const { PrismaClient } = require("@prisma/client");
 const { coreApi }      = require("../config/midtrans");
 
-const prisma = new PrismaClient();
-
+const prisma     = new PrismaClient();
 const ROLE_GUEST = 3;
 
-const HARI_MAP = {
-    0: "minggu", 1: "senin", 2: "selasa", 3: "rabu",
-    4: "kamis",  5: "jumat", 6: "sabtu",
-};
-
 const parseLocalDate = (tanggal) => {
-    const [year, month, day] = tanggal.split("-").map(Number);
-    return new Date(year, month - 1, day);
+    return new Date(tanggal + "T00:00:00.000Z");
 };
 
-const hitungDurasiJam = (jam_buka, jam_tutup) => {
-    const [h1, m1] = jam_buka.split(":").map(Number);
-    const [h2, m2] = jam_tutup.split(":").map(Number);
-    return ((h2 * 60 + m2) - (h1 * 60 + m1)) / 60;
+const timeToMinutes = (t) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
 };
 
-// ─── FR-04: BUAT RESERVASI ─────────────────────────────────────────────────────
+const hitungDurasiJam = (jam_mulai, jam_selesai) => {
+    return (timeToMinutes(jam_selesai) - timeToMinutes(jam_mulai)) / 60;
+};
+
+// ─── GET SLOT TERSEDIA ─────────────────────────────────────────────────────────
+exports.getSlotTersedia = async (req, res) => {
+    const { fasilitas_id, tanggal } = req.query;
+
+    if (!fasilitas_id || !tanggal)
+        return res.status(400).json({ message: "fasilitas_id dan tanggal wajib diisi" });
+
+    try {
+        const fasilitas = await prisma.fasilitas.findUnique({
+            where: { fasilitas_id: parseInt(fasilitas_id) },
+        });
+
+        if (!fasilitas) return res.status(404).json({ message: "Fasilitas tidak ditemukan" });
+
+        const tglObj = parseLocalDate(tanggal);
+
+        // Reservasi aktif di tanggal ini
+        const reservasiAda = await prisma.reservasi.findMany({
+            where: {
+                fasilitas_id: parseInt(fasilitas_id),
+                tanggal:      tglObj,
+                status:       { in: ["menunggu", "disetujui"] },
+            },
+            select: { jam_mulai: true, jam_selesai: true },
+        });
+
+        // Slot yang diblokir admin
+        const slotDiblokir = await prisma.slotTidakTersedia.findMany({
+            where: {
+                fasilitas_id: parseInt(fasilitas_id),
+                tanggal:      tglObj,
+            },
+            select: { jam_mulai: true, jam_selesai: true },
+        });
+
+        // Generate slot per jam dari jam_buka sampai jam_tutup
+        const slots   = [];
+        let current   = timeToMinutes(fasilitas.jam_buka);
+        const end     = timeToMinutes(fasilitas.jam_tutup);
+
+        while (current < end) {
+            const jam_mulai   = `${String(Math.floor(current / 60)).padStart(2, "0")}:${String(current % 60).padStart(2, "0")}`;
+            const jam_selesai = `${String(Math.floor((current + 60) / 60)).padStart(2, "0")}:${String((current + 60) % 60).padStart(2, "0")}`;
+
+            const dipesan = reservasiAda.some((r) =>
+                timeToMinutes(r.jam_mulai) < current + 60 &&
+                timeToMinutes(r.jam_selesai) > current
+            );
+
+            const diblokir = slotDiblokir.some((s) =>
+                timeToMinutes(s.jam_mulai) < current + 60 &&
+                timeToMinutes(s.jam_selesai) > current
+            );
+
+            slots.push({ jam_mulai, jam_selesai, tersedia: !dipesan && !diblokir });
+            current += 60;
+        }
+
+        res.json({
+            message:        "Berhasil ambil slot tersedia",
+            fasilitas_id:   fasilitas.fasilitas_id,
+            nama_fasilitas: fasilitas.nama_fasilitas,
+            harga_per_jam:  fasilitas.harga_per_jam,
+            jam_buka:       fasilitas.jam_buka,
+            jam_tutup:      fasilitas.jam_tutup,
+            tanggal,
+            slots,
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Terjadi kesalahan server" });
+    }
+};
+
+// ─── BUAT RESERVASI ────────────────────────────────────────────────────────────
 exports.createReservasi = async (req, res) => {
-    const { fasilitas_id, jadwal_id, tanggal, keperluan } = req.body;
+    const { fasilitas_id, tanggal, jam_mulai, jam_selesai, keperluan } = req.body;
     const user_id = req.user.user_id;
 
-    if (!fasilitas_id || !jadwal_id || !tanggal) {
-        return res.status(400).json({
-            message: "fasilitas_id, jadwal_id, dan tanggal wajib diisi",
-        });
+    if (!fasilitas_id || !tanggal || !jam_mulai || !jam_selesai) {
+        return res.status(400).json({ message: "fasilitas_id, tanggal, jam_mulai, jam_selesai wajib diisi" });
+    }
+
+    if (timeToMinutes(jam_mulai) >= timeToMinutes(jam_selesai)) {
+        return res.status(400).json({ message: "jam_mulai harus lebih awal dari jam_selesai" });
     }
 
     try {
@@ -39,40 +111,53 @@ exports.createReservasi = async (req, res) => {
         });
 
         if (!fasilitas) return res.status(404).json({ message: "Fasilitas tidak ditemukan" });
-        if (fasilitas.status !== "aktif") {
+        if (fasilitas.status !== "aktif")
             return res.status(400).json({ message: `Fasilitas tidak tersedia, status: ${fasilitas.status}` });
-        }
 
-        const jadwal = await prisma.jadwalFasilitas.findUnique({
-            where: { jadwal_id: parseInt(jadwal_id) },
-        });
-
-        if (!jadwal || jadwal.fasilitas_id !== parseInt(fasilitas_id)) {
-            return res.status(404).json({ message: "Jadwal tidak ditemukan untuk fasilitas ini" });
-        }
-
-        const tglObj      = parseLocalDate(tanggal);
-        const hariTanggal = HARI_MAP[tglObj.getDay()];
-
-        if (hariTanggal !== jadwal.hari) {
+        // Validasi dalam jam operasional
+        if (
+            timeToMinutes(jam_mulai)   < timeToMinutes(fasilitas.jam_buka) ||
+            timeToMinutes(jam_selesai) > timeToMinutes(fasilitas.jam_tutup)
+        ) {
             return res.status(400).json({
-                message: `Tanggal yang dipilih adalah hari ${hariTanggal}, jadwal ini untuk hari ${jadwal.hari}`,
+                message: `Jam operasional fasilitas: ${fasilitas.jam_buka} - ${fasilitas.jam_tutup}`,
             });
         }
 
+        const tglObj = parseLocalDate(tanggal);
+
+        // Cek konflik dengan reservasi lain
         const konflik = await prisma.reservasi.findFirst({
             where: {
                 fasilitas_id: parseInt(fasilitas_id),
-                jadwal_id:    parseInt(jadwal_id),
                 tanggal:      tglObj,
                 status:       { in: ["menunggu", "disetujui"] },
+                AND: [
+                    { jam_mulai:   { lt: jam_selesai } },
+                    { jam_selesai: { gt: jam_mulai   } },
+                ],
             },
         });
 
-        if (konflik) {
-            return res.status(409).json({ message: "Slot jadwal pada tanggal tersebut sudah dipesan" });
-        }
+        if (konflik)
+            return res.status(409).json({ message: "Slot waktu tersebut sudah dipesan" });
 
+        // Cek slot diblokir admin
+        const diblokir = await prisma.slotTidakTersedia.findFirst({
+            where: {
+                fasilitas_id: parseInt(fasilitas_id),
+                tanggal:      tglObj,
+                AND: [
+                    { jam_mulai:   { lt: jam_selesai } },
+                    { jam_selesai: { gt: jam_mulai   } },
+                ],
+            },
+        });
+
+        if (diblokir)
+            return res.status(409).json({ message: "Slot waktu tersebut tidak tersedia" });
+
+        // Cek user sudah punya reservasi aktif di fasilitas + tanggal yang sama
         const bookingUser = await prisma.reservasi.findFirst({
             where: {
                 user_id,
@@ -82,40 +167,49 @@ exports.createReservasi = async (req, res) => {
             },
         });
 
-        if (bookingUser) {
+        if (bookingUser)
             return res.status(409).json({
                 message: "Kamu sudah memiliki reservasi aktif untuk fasilitas ini pada tanggal tersebut",
             });
-        }
 
+        const durasi      = hitungDurasiJam(jam_mulai, jam_selesai);
+        const total_harga = fasilitas.harga_per_jam
+            ? Math.round(parseFloat(fasilitas.harga_per_jam) * durasi)
+            : null;
+
+        let dokumen_url       = null;
+        if (req.file) {
+            dokumen_url       = req.file.path;
+        }
         const reservasi = await prisma.reservasi.create({
             data: {
                 user_id,
                 fasilitas_id: parseInt(fasilitas_id),
-                jadwal_id:    parseInt(jadwal_id),
                 tanggal:      tglObj,
+                jam_mulai,
+                jam_selesai,
                 keperluan:    keperluan || null,
+                dokumen_url,
                 status:       "menunggu",
             },
             include: {
                 fasilitas: { select: { nama_fasilitas: true, lokasi: true, harga_per_jam: true } },
-                jadwal:    { select: { hari: true, jam_buka: true, jam_tutup: true } },
             },
         });
 
         res.status(201).json({
             message: "Reservasi berhasil dibuat, menunggu persetujuan admin",
-            data:    reservasi,
+            data:    { ...reservasi, durasi, total_harga },
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Terjadi kesalahan server" });
+        res.status(500).json({ message: "Terjadi kesalahan server: " + err.message });
     }
 };
 
-// ─── FR-05: LIHAT STATUS RESERVASI ────────────────────────────────────────────
+// ─── LIHAT RESERVASI MILIK USER ────────────────────────────────────────────────
 exports.getMyReservasi = async (req, res) => {
-    const user_id = req.user.user_id;
+    const user_id    = req.user.user_id;
     const { status } = req.query;
 
     try {
@@ -126,23 +220,18 @@ exports.getMyReservasi = async (req, res) => {
             where,
             include: {
                 fasilitas: { select: { nama_fasilitas: true, lokasi: true, gambar_url: true } },
-                jadwal:    { select: { hari: true, jam_buka: true, jam_tutup: true } },
             },
             orderBy: { created_at: "desc" },
         });
 
-        res.json({
-            message: "Berhasil ambil data reservasi",
-            total:   reservasi.length,
-            data:    reservasi,
-        });
+        res.json({ message: "Berhasil ambil data reservasi", total: reservasi.length, data: reservasi });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Terjadi kesalahan server" });
     }
 };
 
-// ─── FR-05: DETAIL RESERVASI MILIK USER ───────────────────────────────────────
+// ─── DETAIL RESERVASI MILIK USER ───────────────────────────────────────────────
 exports.getMyReservasiById = async (req, res) => {
     const user_id = req.user.user_id;
     const { id }  = req.params;
@@ -152,9 +241,8 @@ exports.getMyReservasiById = async (req, res) => {
             where: { reservasi_id: parseInt(id), user_id },
             include: {
                 fasilitas: {
-                    select: { nama_fasilitas: true, lokasi: true, gambar_url: true, deskripsi: true },
+                    select: { nama_fasilitas: true, lokasi: true, gambar_url: true, deskripsi: true, harga_per_jam: true },
                 },
-                jadwal: { select: { hari: true, jam_buka: true, jam_tutup: true } },
             },
         });
 
@@ -167,7 +255,7 @@ exports.getMyReservasiById = async (req, res) => {
     }
 };
 
-// ─── FR-04: BATALKAN RESERVASI ─────────────────────────────────────────────────
+// ─── BATALKAN RESERVASI ────────────────────────────────────────────────────────
 exports.cancelReservasi = async (req, res) => {
     const user_id = req.user.user_id;
     const { id }  = req.params;
@@ -178,9 +266,8 @@ exports.cancelReservasi = async (req, res) => {
         });
 
         if (!reservasi) return res.status(404).json({ message: "Reservasi tidak ditemukan" });
-        if (reservasi.status !== "menunggu") {
+        if (reservasi.status !== "menunggu")
             return res.status(400).json({ message: `Reservasi tidak bisa dibatalkan, status: ${reservasi.status}` });
-        }
 
         await prisma.reservasi.update({
             where: { reservasi_id: parseInt(id) },
@@ -194,7 +281,7 @@ exports.cancelReservasi = async (req, res) => {
     }
 };
 
-// ─── FR-06: ADMIN — LIHAT SEMUA RESERVASI ─────────────────────────────────────
+// ─── ADMIN: LIHAT SEMUA RESERVASI ─────────────────────────────────────────────
 exports.getAllReservasiAdmin = async (req, res) => {
     const { status, fasilitas_id, tanggal } = req.query;
 
@@ -211,7 +298,6 @@ exports.getAllReservasiAdmin = async (req, res) => {
                     select: { user_id: true, nama_lengkap: true, email: true, nim_nip: true, role_id: true },
                 },
                 fasilitas: { select: { nama_fasilitas: true, lokasi: true } },
-                jadwal:    { select: { hari: true, jam_buka: true, jam_tutup: true } },
             },
             orderBy: { created_at: "desc" },
         });
@@ -230,7 +316,7 @@ exports.getAllReservasiAdmin = async (req, res) => {
     }
 };
 
-// ─── FR-06: ADMIN — DETAIL RESERVASI ──────────────────────────────────────────
+// ─── ADMIN: DETAIL RESERVASI ───────────────────────────────────────────────────
 exports.getReservasiByIdAdmin = async (req, res) => {
     const { id } = req.params;
 
@@ -244,7 +330,6 @@ exports.getReservasiByIdAdmin = async (req, res) => {
                 fasilitas: {
                     select: { nama_fasilitas: true, lokasi: true, gambar_url: true, deskripsi: true, harga_per_jam: true },
                 },
-                jadwal: { select: { hari: true, jam_buka: true, jam_tutup: true } },
             },
         });
 
@@ -257,7 +342,7 @@ exports.getReservasiByIdAdmin = async (req, res) => {
     }
 };
 
-// ─── FR-07: ADMIN — SETUJUI RESERVASI ─────────────────────────────────────────
+// ─── ADMIN: APPROVE RESERVASI ──────────────────────────────────────────────────
 exports.approveReservasi = async (req, res) => {
     const { id }            = req.params;
     const { catatan_admin } = req.body;
@@ -268,56 +353,40 @@ exports.approveReservasi = async (req, res) => {
             include: {
                 user:      { select: { user_id: true, nama_lengkap: true, email: true, role_id: true } },
                 fasilitas: { select: { nama_fasilitas: true, harga_per_jam: true } },
-                jadwal:    { select: { hari: true, jam_buka: true, jam_tutup: true } },
             },
         });
 
         if (!reservasi) return res.status(404).json({ message: "Reservasi tidak ditemukan" });
-        if (reservasi.status !== "menunggu") {
+        if (reservasi.status !== "menunggu")
             return res.status(400).json({ message: `Reservasi sudah diproses, status: ${reservasi.status}` });
-        }
 
         let midtransData = {};
 
         if (reservasi.user.role_id === ROLE_GUEST) {
             const harga_per_jam = parseFloat(reservasi.fasilitas.harga_per_jam || 0);
-            const durasi        = hitungDurasiJam(reservasi.jadwal.jam_buka, reservasi.jadwal.jam_tutup);
+            const durasi        = hitungDurasiJam(reservasi.jam_mulai, reservasi.jam_selesai);
             const total_harga   = Math.round(harga_per_jam * durasi);
 
-            if (total_harga <= 0) {
-                return res.status(400).json({
-                    message: "Harga fasilitas belum diatur, tidak bisa generate QRIS",
-                });
-            }
+            if (total_harga <= 0)
+                return res.status(400).json({ message: "Harga fasilitas belum diatur, tidak bisa generate QRIS" });
 
             const order_id = `SIRESKA-${reservasi.reservasi_id}-${Date.now()}`;
 
-            console.log("Midtrans server key:", process.env.MIDTRANS_SERVER_KEY);
-
             const chargeResponse = await coreApi.charge({
-                payment_type: "qris",
-                transaction_details: {
-                    order_id,
-                    gross_amount: total_harga,
-                },
-                qris: {
-                    acquirer: "gopay",
-                },
+                payment_type:        "qris",
+                transaction_details: { order_id, gross_amount: total_harga },
+                qris:                { acquirer: "gopay" },
                 customer_details: {
                     first_name: reservasi.user.nama_lengkap,
                     email:      reservasi.user.email,
                 },
-                item_details: [
-                    {
-                        id:       `FAC-${reservasi.fasilitas_id}`,
-                        price:    total_harga,
-                        quantity: 1,
-                        name:     `Reservasi ${reservasi.fasilitas.nama_fasilitas} (${durasi} jam)`,
-                    },
-                ],
+                item_details: [{
+                    id:       `FAC-${reservasi.fasilitas_id}`,
+                    price:    total_harga,
+                    quantity: 1,
+                    name:     `Reservasi ${reservasi.fasilitas.nama_fasilitas} (${durasi} jam)`,
+                }],
             });
-
-            console.log("Midtrans charge response:", JSON.stringify(chargeResponse, null, 2));
 
             midtransData = {
                 midtrans_order_id: order_id,
@@ -329,15 +398,10 @@ exports.approveReservasi = async (req, res) => {
 
         const updated = await prisma.reservasi.update({
             where: { reservasi_id: parseInt(id) },
-            data: {
-                status:        "disetujui",
-                catatan_admin: catatan_admin || null,
-                ...midtransData,
-            },
+            data:  { status: "disetujui", catatan_admin: catatan_admin || null, ...midtransData },
             include: {
                 user:      { select: { nama_lengkap: true, email: true, role_id: true } },
                 fasilitas: { select: { nama_fasilitas: true, harga_per_jam: true } },
-                jadwal:    { select: { hari: true, jam_buka: true, jam_tutup: true } },
             },
         });
 
@@ -354,7 +418,7 @@ exports.approveReservasi = async (req, res) => {
     }
 };
 
-// ─── FR-07: ADMIN — TOLAK RESERVASI ───────────────────────────────────────────
+// ─── ADMIN: TOLAK RESERVASI ────────────────────────────────────────────────────
 exports.rejectReservasi = async (req, res) => {
     const { id }            = req.params;
     const { catatan_admin } = req.body;
@@ -365,20 +429,15 @@ exports.rejectReservasi = async (req, res) => {
         });
 
         if (!reservasi) return res.status(404).json({ message: "Reservasi tidak ditemukan" });
-        if (reservasi.status !== "menunggu") {
+        if (reservasi.status !== "menunggu")
             return res.status(400).json({ message: `Reservasi sudah diproses, status: ${reservasi.status}` });
-        }
 
         const updated = await prisma.reservasi.update({
             where: { reservasi_id: parseInt(id) },
-            data: {
-                status:        "ditolak",
-                catatan_admin: catatan_admin || null,
-            },
+            data:  { status: "ditolak", catatan_admin: catatan_admin || null },
             include: {
                 user:      { select: { nama_lengkap: true, email: true } },
                 fasilitas: { select: { nama_fasilitas: true } },
-                jadwal:    { select: { hari: true, jam_buka: true, jam_tutup: true } },
             },
         });
 
@@ -397,9 +456,7 @@ exports.midtransNotification = async (req, res) => {
 
         let status_pembayaran;
         if (transaction_status === "settlement" || transaction_status === "capture") {
-            if (fraud_status === "accept" || !fraud_status) {
-                status_pembayaran = "lunas";
-            }
+            if (fraud_status === "accept" || !fraud_status) status_pembayaran = "lunas";
         } else if (["cancel", "deny", "expire"].includes(transaction_status)) {
             status_pembayaran = "expired";
         } else if (transaction_status === "pending") {
@@ -420,7 +477,7 @@ exports.midtransNotification = async (req, res) => {
     }
 };
 
-// ─── DELETE RESERVASI ──────────────────────────────────────────────────────────
+// ─── ADMIN: DELETE RESERVASI ───────────────────────────────────────────────────
 exports.deleteReservasi = async (req, res) => {
     const { id } = req.params;
     try {
@@ -441,19 +498,13 @@ exports.simulasiPembayaran = async (req, res) => {
             where: { reservasi_id: parseInt(id) },
         });
 
-        if (!reservasi) return res.status(404).json({ message: "Reservasi tidak ditemukan" });
-        if (!reservasi.midtrans_order_id) {
-            return res.status(400).json({ message: "Order ID tidak ditemukan" });
-        }
+        if (!reservasi)                   return res.status(404).json({ message: "Reservasi tidak ditemukan" });
+        if (!reservasi.midtrans_order_id) return res.status(400).json({ message: "Order ID tidak ditemukan" });
 
-        const response = await coreApi.transaction.status(reservasi.midtrans_order_id);
-        console.log("Transaction status:", response);
-
-        // Trigger settle via Midtrans sandbox
         const settleResponse = await fetch(
             `https://api.sandbox.midtrans.com/v2/${reservasi.midtrans_order_id}/settle`,
             {
-                method: "POST",
+                method:  "POST",
                 headers: {
                     Authorization:  `Basic ${Buffer.from(process.env.MIDTRANS_SERVER_KEY + ":").toString("base64")}`,
                     "Content-Type": "application/json",
@@ -462,9 +513,7 @@ exports.simulasiPembayaran = async (req, res) => {
         );
 
         const result = await settleResponse.json();
-        console.log("Settle response:", result);
 
-        // Update status langsung di DB
         await prisma.reservasi.update({
             where: { reservasi_id: parseInt(id) },
             data:  { status_pembayaran: "lunas" },

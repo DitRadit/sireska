@@ -14,49 +14,42 @@ const fasilitasService = {
   },
 
   // ─── CREATE FASILITAS ──────────────────────────────
-  createFasilitas: async (data) => {
-    const formData = new FormData();
+createFasilitas: async (data) => {
+  const formData = new FormData();
+  formData.append("nama_fasilitas", data.nama_fasilitas);
+  formData.append("deskripsi", data.deskripsi || "");
+  formData.append("lokasi", data.lokasi || "");
+  formData.append("tipe", data.tipe || "Outdoor");
+  formData.append("alamat", data.alamat || "");
+  formData.append("latitude", data.latitude || "");
+  formData.append("longitude", data.longitude || "");
+  formData.append("kapasitas", data.kapasitas || "");
+  formData.append("jam_buka", data.jam_buka || "08:00");   // ← tambah
+  formData.append("jam_tutup", data.jam_tutup || "17:00"); // ← tambah
+  formData.append("status", data.status || "aktif");
 
-    // Field teks standar
-    formData.append("nama_fasilitas", data.nama_fasilitas);
-    formData.append("deskripsi", data.deskripsi || "");
-    formData.append("lokasi", data.lokasi || "");
-    formData.append("tipe", data.tipe || "Outdoor");
-    formData.append("alamat", data.alamat || "");
-    formData.append("latitude", data.latitude || "");
-    formData.append("longitude", data.longitude || "");
-    formData.append("kapasitas", data.kapasitas || "");
-    formData.append("status", data.status || "aktif");
+  // Hapus bagian jadwal karena sudah tidak dipakai
+  // if (data.jadwal) { formData.append("jadwal", ...) }
 
-    // Jadwal array → stringify
-    if (data.jadwal) {
-      formData.append("jadwal", JSON.stringify(data.jadwal));
-    }
+  if (data.gambar) formData.append("gambar", data.gambar);
 
-    // Upload gambar (jika ada)
-    if (data.gambar) {
-      formData.append("gambar", data.gambar);
-    }
-
-    const res = await api.post("/fasilitas", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    return res.data;
-  },
+  const res = await api.post("/fasilitas", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+},
 
   // ─── UPDATE FASILITAS ──────────────────────────────
   updateFasilitas: async (id, data) => {
     const formData = new FormData();
 
     // Cara yang lebih bersih (Clean Code) dibanding pakai banyak if
-    const textFields = [
-      "nama_fasilitas", "deskripsi", "lokasi", "alamat",
-      "latitude", "longitude",  
-      "tipe", "kapasitas", "status",
-    ];
+const textFields = [
+  "nama_fasilitas", "deskripsi", "lokasi", "alamat",
+  "latitude", "longitude",
+  "tipe", "kapasitas", "status",
+  "jam_buka", "jam_tutup", // ← tambah
+];
 
     // Otomatis mengecek dan memasukkan data teks yang dikirim
     textFields.forEach((field) => {
@@ -64,11 +57,6 @@ const fasilitasService = {
         formData.append(field, data[field]);
       }
     });
-
-    // Handle data spesial (Jadwal)
-    if (data.jadwal !== undefined) {
-      formData.append("jadwal", JSON.stringify(data.jadwal));
-    }
 
     // Handle data gambar (Hanya dikirim jika admin mengubah gambar)
     if (data.gambar) {

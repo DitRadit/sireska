@@ -2,10 +2,20 @@ import api from "../api/axios";
 
 const bookingService = {
     // ─── User ──────────────────────────────────────────────────────────────────
-    createBooking: async (data) => {
-        const res = await api.post("/reservasi", data);
-        return res.data;
-    },
+createBooking: async (data) => {
+    const formData = new FormData();
+    formData.append("fasilitas_id", data.fasilitas_id);
+    formData.append("tanggal",      data.tanggal);
+    formData.append("jam_mulai",    data.jam_mulai);
+    formData.append("jam_selesai",  data.jam_selesai);
+    formData.append("keperluan",    data.keperluan || "");
+    if (data.dokumen) formData.append("dokumen", data.dokumen); // ← opsional
+
+    const res = await api.post("/reservasi", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+},
     cancelBooking: async (id) => {
         const res = await api.patch(`/reservasi/${id}/cancel`);
         return res.data;
@@ -17,6 +27,12 @@ const bookingService = {
     getMyBookings: async (status) => {
         const params = status ? { status } : {};
         const res = await api.get("/reservasi/my", { params });
+        return res.data;
+    },
+    getSlotTersedia: async (fasilitas_id, tanggal) => {
+        const res = await api.get("/reservasi/slot-tersedia", {
+            params: { fasilitas_id, tanggal },
+        });
         return res.data;
     },
 
@@ -46,9 +62,9 @@ const bookingService = {
         return res.data;
     },
     simulasiPembayaran: async (id) => {
-    const res = await api.post(`/reservasi/dev/simulasi/${id}`);
-    return res.data;
-},
+        const res = await api.post(`/reservasi/dev/simulasi/${id}`);
+        return res.data;
+    },
 };
 
 export default bookingService;

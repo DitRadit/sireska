@@ -33,22 +33,25 @@ const TambahFasilitas = () => {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [markerPos, setMarkerPos] = useState(null); // ← PINDAH KE DALAM KOMPONEN
 
-  const [formData, setFormData] = useState({
-    nama_fasilitas: "",
-    lokasi: "",
-    alamat: "",
-    latitude: "",
-    longitude: "",
-    tipe: "Outdoor",
-    kapasitas: "",
-    deskripsi: "",
-    gambar: null,
-    status: "aktif",
-  });
+const [formData, setFormData] = useState({
+  nama_fasilitas: "",
+  lokasi: "",
+  alamat: "",
+  latitude: "",
+  longitude: "",
+  tipe: "Outdoor",
+  harga_per_jam: "",
+  kapasitas: "",
+  jam_buka: "08:00",   // ← tambah
+  jam_tutup: "17:00",  // ← tambah
+  deskripsi: "",
+  gambar: null,
+  status: "aktif",
+});
 
-  const [jadwal, setJadwal] = useState([
-    { hari: "senin", jam_buka: "08:00", jam_tutup: "17:00" },
-  ]);
+  // const [jadwal, setJadwal] = useState([
+  //   { hari: "senin", jam_buka: "08:00", jam_tutup: "17:00" },
+  // ]);
 
   // ← PINDAH KE DALAM KOMPONEN
   const handleMapPick = (lat, lng) => {
@@ -72,20 +75,25 @@ const TambahFasilitas = () => {
       const res = await fasilitasService.getFasilitasById(id);
       const data = res.data;
 
-      setFormData({
-        nama_fasilitas: data.nama_fasilitas || "",
-        lokasi: data.lokasi || "",
-        alamat: data.alamat || "",
-        latitude: data.latitude || "",
-        longitude: data.longitude || "",
-        tipe: data.tipe || "Outdoor",
-        kapasitas: data.kapasitas || "",
-        deskripsi: data.deskripsi || "",
-        gambar: null,
-        status: data.status || "aktif",
-      });
+setFormData({
+  nama_fasilitas: data.nama_fasilitas || "",
+  lokasi: data.lokasi || "",
+  alamat: data.alamat || "",
+  latitude: data.latitude || "",
+  longitude: data.longitude || "",
+  tipe: data.tipe || "Outdoor",
+  kapasitas: data.kapasitas || "",
+  jam_buka: data.jam_buka || "08:00",   // ← tambah
+  jam_tutup: data.jam_tutup || "17:00", // ← tambah
+  harga_per_jam: data.harga_per_jam || "",
+  deskripsi: data.deskripsi || "",
+  gambar: null,
+  status: data.status || "aktif",
+});
 
-      if (data.jadwal?.length) setJadwal(data.jadwal);
+// Hapus: if (data.jadwal?.length) setJadwal(data.jadwal);
+
+      // if (data.jadwal?.length) setJadwal(data.jadwal);
 
       if (data.latitude && data.longitude) {
         setMarkerPos([parseFloat(data.latitude), parseFloat(data.longitude)]);
@@ -115,38 +123,39 @@ const TambahFasilitas = () => {
     setFormData((prev) => ({ ...prev, gambar: e.target.files[0] }));
   };
 
-  const handleJadwalChange = (index, field, value) => {
-    const updated = [...jadwal];
-    updated[index][field] = value;
-    setJadwal(updated);
-  };
+  // const handleJadwalChange = (index, field, value) => {
+  //   const updated = [...jadwal];
+  //   updated[index][field] = value;
+  //   setJadwal(updated);
+  // };
 
-  const tambahJadwal = () => {
-    setJadwal([...jadwal, { hari: "senin", jam_buka: "08:00", jam_tutup: "17:00" }]);
-  };
+  // const tambahJadwal = () => {
+  //   setJadwal([...jadwal, { hari: "senin", jam_buka: "08:00", jam_tutup: "17:00" }]);
+  // };
 
-  const hapusJadwal = (index) => {
-    const updated = [...jadwal];
-    updated.splice(index, 1);
-    setJadwal(updated);
-  };
+  // const hapusJadwal = (index) => {
+  //   const updated = [...jadwal];
+  //   updated.splice(index, 1);
+  //   setJadwal(updated);
+  // };
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      const payload = {
-        nama_fasilitas: formData.nama_fasilitas,
-        lokasi: formData.lokasi,
-        alamat: formData.alamat,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        kapasitas: formData.kapasitas,
-        deskripsi: formData.deskripsi,
-        gambar: formData.gambar,
-        status: formData.status,
-        jadwal,
-      };
-
+const payload = {
+  nama_fasilitas: formData.nama_fasilitas,
+  lokasi: formData.lokasi,
+  alamat: formData.alamat,
+  latitude: formData.latitude,
+  longitude: formData.longitude,
+  kapasitas: formData.kapasitas,
+  harga_per_jam: formData.harga_per_jam,
+  jam_buka: formData.jam_buka,   
+  jam_tutup: formData.jam_tutup, 
+  deskripsi: formData.deskripsi,
+  gambar: formData.gambar,
+  status: formData.status,
+};
       if (isEdit) {
         await fasilitasService.updateFasilitas(id, payload);
       } else {
@@ -273,26 +282,41 @@ const TambahFasilitas = () => {
                     </p>
                   </div>
 
-                  {/* TIPE & KAPASITAS */}
-                  <div className="grid grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Tipe Fasilitas</label>
-                      <select name="tipe" value={formData.tipe} onChange={handleChange}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium cursor-pointer"
-                      >
-                        <option value="Outdoor">Outdoor</option>
-                        <option value="Indoor">Indoor</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Kapasitas (Orang)</label>
-                      <input
-                        type="number" name="kapasitas" value={formData.kapasitas}
-                        onChange={handleChange} placeholder="Contoh: 40"
-                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium"
-                      />
-                    </div>
-                  </div>
+{/* TIPE, KAPASITAS & HARGA */}
+<div className="grid grid-cols-3 gap-5">
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">Tipe Fasilitas</label>
+    <select name="tipe" value={formData.tipe} onChange={handleChange}
+      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium cursor-pointer"
+    >
+      <option value="Outdoor">Outdoor</option>
+      <option value="Indoor">Indoor</option>
+    </select>
+  </div>
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">Kapasitas (Orang)</label>
+    <input
+      type="number" name="kapasitas" value={formData.kapasitas}
+      onChange={handleChange} placeholder="Contoh: 40"
+      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">
+      Harga/Jam
+      <span className="text-gray-400 font-normal ml-1">(opsional)</span>
+    </label>
+    <div className="relative">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">Rp</span>
+      <input
+        type="number" name="harga_per_jam" value={formData.harga_per_jam}
+        onChange={handleChange} placeholder="0"
+        className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium"
+      />
+    </div>
+    <p className="text-[11px] text-gray-400 mt-1.5 font-medium">Dikenakan untuk pengguna tamu</p>
+  </div>
+</div>
                 </div>
 
                 {/* RIGHT COLUMN: UPLOAD FOTO */}
@@ -374,51 +398,35 @@ const TambahFasilitas = () => {
               </div>
 
               {/* ── SECTION: JADWAL OPERASIONAL ── */}
-              <div className="mt-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-orange-500 bg-orange-50 p-2 rounded-lg">schedule</span>
-                    <h2 className="text-lg font-bold text-gray-800">Jadwal Operasional</h2>
-                  </div>
-                  <button onClick={tambahJadwal} className="text-orange-500 hover:text-orange-600 font-bold text-sm flex items-center gap-1 transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">add</span> Tambah Hari
-                  </button>
-                </div>
-
-                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 space-y-3">
-                  {jadwal.map((item, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
-                      <select
-                        value={item.hari}
-                        onChange={(e) => handleJadwalChange(index, "hari", e.target.value)}
-                        className="w-full sm:w-[150px] bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm font-medium cursor-pointer focus:border-orange-400 capitalize"
-                      >
-                        {["senin","selasa","rabu","kamis","jumat","sabtu","minggu"].map((h) => (
-                          <option key={h} value={h} className="capitalize">{h.charAt(0).toUpperCase() + h.slice(1)}</option>
-                        ))}
-                      </select>
-
-                      <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <input type="time" value={item.jam_buka}
-                          onChange={(e) => handleJadwalChange(index, "jam_buka", e.target.value)}
-                          className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm font-medium focus:border-orange-400"
-                        />
-                        <span className="text-gray-400 text-sm font-bold">-</span>
-                        <input type="time" value={item.jam_tutup}
-                          onChange={(e) => handleJadwalChange(index, "jam_tutup", e.target.value)}
-                          className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none text-sm font-medium focus:border-orange-400"
-                        />
-                      </div>
-
-                      <button onClick={() => hapusJadwal(index)}
-                        className="ml-auto w-10 h-10 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">delete</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+{/* JAM BUKA & TUTUP */}
+<div className="grid grid-cols-2 gap-5">
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">Jam Buka</label>
+    <div className="relative">
+      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">schedule</span>
+      <input
+        type="time"
+        name="jam_buka"
+        value={formData.jam_buka}
+        onChange={handleChange}
+        className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium"
+      />
+    </div>
+  </div>
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-2">Jam Tutup</label>
+    <div className="relative">
+      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">schedule</span>
+      <input
+        type="time"
+        name="jam_tutup"
+        value={formData.jam_tutup}
+        onChange={handleChange}
+        className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:border-orange-400 focus:bg-white transition-all text-sm font-medium"
+      />
+    </div>
+  </div>
+</div>
 
               {/* ── SECTION: DESKRIPSI ── */}
               <div className="mt-10">

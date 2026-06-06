@@ -1,11 +1,24 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import fasilitasService from "../service/fasilitasServices";
+import bookingService from "../service/bookingService";
 import Navbar from "../components/headerComponent";
 import Footer from "../components/footerComponent";
 
 const formatRupiah = (angka) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(angka);
+
+const timeToMinutes = (t) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+};
+
+const getNowMinutes = () => {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+};
+
+const getTodayString = () => new Date().toISOString().split("T")[0];
 
 const FasilitasDetailPage = () => {
   const { id }      = useParams();
@@ -13,8 +26,17 @@ const FasilitasDetailPage = () => {
   const [fasilitas, setFasilitas] = useState(null);
   const [loading, setLoading]     = useState(true);
 
+  const [selectedDate, setSelectedDate] = useState("");
+  const [slots,        setSlots]        = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
   const user    = JSON.parse(localStorage.getItem("user") || "{}");
   const isGuest = user?.is_guest === true || user?.user?.is_guest === true || user?.role_id === 3;
+
+  const isSlotLewat = (slot) => {
+    if (selectedDate !== getTodayString()) return false;
+    return timeToMinutes(slot.jam_mulai) < getNowMinutes();
+  };
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -29,6 +51,28 @@ const FasilitasDetailPage = () => {
     };
     fetchDetail();
   }, [id]);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    let cancelled = false;
+
+    const fetchSlots = async () => {
+      setLoadingSlots(true);
+      setSlots([]);
+      try {
+        const res = await bookingService.getSlotTersedia(id, selectedDate);
+        if (!cancelled) setSlots(res.slots || []);
+      } catch (err) {
+        console.error("Error fetch slot:", err);
+        if (!cancelled) setSlots([]);
+      } finally {
+        if (!cancelled) setLoadingSlots(false);
+      }
+    };
+
+    fetchSlots();
+    return () => { cancelled = true; };
+  }, [selectedDate, id]);
 
   if (loading) {
     return (
@@ -55,10 +99,7 @@ const FasilitasDetailPage = () => {
     );
   }
 
-  const hariOrder   = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"];
-  const jadwalSorted = [...(fasilitas?.jadwal || [])].sort(
-    (a, b) => hariOrder.indexOf(a.hari) - hariOrder.indexOf(b.hari)
-  );
+
 
   const statusConfig = {
     aktif:       { label: "Tersedia",    bg: "bg-green-100",  text: "text-green-700" },
@@ -126,14 +167,16 @@ const FasilitasDetailPage = () => {
                     </p>
                   </div>
 
-                  {/* Harga per jam — hanya untuk guest */}
                   {isGuest && fasilitas.harga_per_jam && (
                     <div className="bg-orange-50 rounded-2xl p-4 col-span-2 border border-orange-100">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="material-symbols-outlined text-orange-400 text-[18px]">payments</span>
                         <p className="text-[11px] font-bold text-orange-400 uppercase tracking-wide">Harga Sewa</p>
                       </div>
-                      <p className="text-lg font-extrabold text-orange-600">{formatRupiah(fasilitas.harga_per_jam)}<span className="text-sm font-semibold text-orange-400">/jam</span></p>
+                      <p className="text-lg font-extrabold text-orange-600">
+                        {formatRupiah(fasilitas.harga_per_jam)}
+                        <span className="text-sm font-semibold text-orange-400">/jam</span>
+                      </p>
                       <p className="text-[10px] text-orange-400 mt-1">* Harga berlaku untuk pengguna tamu. Pembayaran via QRIS setelah disetujui admin.</p>
                     </div>
                   )}
@@ -160,34 +203,96 @@ const FasilitasDetailPage = () => {
                   </div>
                 )}
 
-                {/* JADWAL */}
+
+                {/* CEK KETERSEDIAAN SLOT */}
                 <div>
                   <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-orange-400 text-[18px]">schedule</span>
-                    Jadwal Operasional
+                    <span className="material-symbols-outlined text-orange-400 text-[18px]">event_available</span>
+                    Cek Ketersediaan Slot
                   </h3>
-                  {jadwalSorted.length === 0 ? (
-                    <p className="text-sm text-gray-400 bg-gray-50 rounded-2xl p-4">Belum ada jadwal operasional.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {jadwalSorted.map((j) => (
-                        <div key={j.jadwal_id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
-                          <span className="text-sm font-semibold text-gray-700 capitalize w-20">{j.hari}</span>
-                          <span className="text-sm text-gray-500 font-medium">{j.jam_buka} – {j.jam_tutup}</span>
-                          {/* Harga per slot — hanya untuk guest */}
-                          {isGuest && fasilitas.harga_per_jam ? (
-                            <span className="text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-md">
-                              {formatRupiah(
-                                fasilitas.harga_per_jam *
-                                ((parseInt(j.jam_tutup) - parseInt(j.jam_buka)) || 1)
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-md">Buka</span>
-                          )}
-                        </div>
+
+                  {/* Date Picker */}
+                  <div className="mb-4">
+                    <label className="block text-[12px] font-bold text-gray-500 mb-2">Pilih Tanggal</label>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      min={getTodayString()}
+                      className="w-full bg-gray-100 border-none rounded-xl px-5 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-300"
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Slot Display */}
+                  {!selectedDate ? (
+                    <p className="text-[12px] text-gray-400 bg-gray-50 rounded-xl px-4 py-3">
+                      Pilih tanggal untuk melihat slot yang tersedia
+                    </p>
+                  ) : loadingSlots ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />
                       ))}
                     </div>
+                  ) : slots.length === 0 ? (
+                    <p className="text-[12px] text-gray-400 bg-gray-50 rounded-xl px-4 py-3">
+                      Tidak ada slot tersedia untuk tanggal ini
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-2">
+                        {slots.map((slot, index) => {
+                          const lewat     = isSlotLewat(slot);
+                          const isUnavail = !slot.tersedia || lewat;
+                          return (
+                            <div
+                              key={index}
+                              className={`px-2 py-3 text-[11px] font-bold rounded-xl border ${
+                                isUnavail
+                                  ? "bg-gray-100 text-gray-400 border-gray-200"
+                                  : "bg-white text-gray-700 border-gray-200"
+                              }`}
+                            >
+                              <span className="block text-[12px] font-bold">{slot.jam_mulai}</span>
+                              <span className={`block text-[9px] font-normal mt-0.5 ${isUnavail ? "text-gray-400" : "text-green-500"}`}>
+                                {lewat ? "Lewat" : !slot.tersedia ? "Penuh" : `s/d ${slot.jam_selesai}`}
+                              </span>
+                              <span className={`block text-[9px] font-bold mt-1 ${isUnavail ? "text-gray-300" : "text-green-600"}`}>
+                                {lewat ? "–" : !slot.tersedia ? "–" : "Tersedia"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Legend */}
+                      <div className="flex items-center gap-4 mt-3 flex-wrap">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded-sm bg-white border border-gray-200" />
+                          <span className="text-[10px] text-gray-500">Tersedia</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200" />
+                          <span className="text-[10px] text-gray-500">Tidak tersedia / Lewat</span>
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      <div className="mt-3 bg-gray-50 rounded-xl px-4 py-2.5 flex items-center justify-between">
+                        <span className="text-[11px] text-gray-500 font-medium">
+                          {slots.filter(s => s.tersedia && !isSlotLewat(s)).length} slot tersedia
+                          {" "}dari {slots.length} total
+                        </span>
+                        {fasilitas.status === "aktif" && (
+                          <button
+                            onClick={() => navigate(`/booking/${fasilitas.fasilitas_id}`)}
+                            className="text-[11px] font-bold text-orange-500 hover:underline"
+                          >
+                            Pesan →
+                          </button>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -216,13 +321,14 @@ const FasilitasDetailPage = () => {
                         src={`https://www.openstreetmap.org/export/embed.html?bbox=${fasilitas.longitude - 0.002},${fasilitas.latitude - 0.002},${fasilitas.longitude + 0.002},${fasilitas.latitude + 0.002}&layer=mapnik&marker=${fasilitas.latitude},${fasilitas.longitude}`}
                       />
                     </div>
-                    <a
-                      href={`https://www.google.com/maps?q=${fasilitas.latitude},${fasilitas.longitude}`}
-                      target="_blank" rel="noreferrer"
-                      className="text-[11px] text-orange-500 font-bold hover:underline mt-1.5 inline-block"
-                    >
-                      Buka di Google Maps →
-                    </a>
+<a
+  href={`https://www.google.com/maps?q=${fasilitas.latitude},${fasilitas.longitude}`}
+  target="_blank"
+  rel="noreferrer"
+  className="text-[11px] text-orange-500 font-bold hover:underline mt-1.5 inline-block"
+>
+  Buka di Google Maps →
+</a>
                   </div>
                 )}
 

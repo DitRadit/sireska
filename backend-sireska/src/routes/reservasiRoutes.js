@@ -4,12 +4,16 @@ const router     = express.Router();
 const reservasi       = require("../controller/reservasiController");
 const { authenticate: authMiddleware } = require("../middleware/authMiddleware");
 const requireRole = require("../middleware/roleMiddleware");
+const { upload } = require("../config/cloudinary");
 
 // ─── Webhook Midtrans (tidak butuh auth, dipanggil oleh Midtrans server) ──────
 router.post("/payment/notification", reservasi.midtransNotification);
 
 // ─── User routes ──────────────────────────────────────────────────────────────
-router.post(  "/",        authMiddleware, reservasi.createReservasi);
+router.get("/slot-tersedia", reservasi.getSlotTersedia);
+// Di routes/reservasiRoutes.js
+
+router.post("/", authMiddleware, upload.single("dokumen"), reservasi.createReservasi);
 router.get(   "/my",      authMiddleware, reservasi.getMyReservasi);
 router.get(   "/my/:id",  authMiddleware, reservasi.getMyReservasiById);
 router.patch( "/:id/cancel", authMiddleware, reservasi.cancelReservasi);
