@@ -152,8 +152,8 @@ const BookingRow = ({ item, onRefresh }) => {
           </span>
         </td>
         <td className="py-4 px-5 text-right">
-          <span className={`material-symbols-outlined text-gray-400 transition-transform duration-300 text-[20px] ${open ? "rotate-45" : ""}`}>
-            {open ? "close" : "expand_more"}
+          <span className={`material-symbols-outlined text-gray-400 transition-transform duration-300 text-[20px] ${open ? "rotate-0" : ""}`}>
+            {open ? "expand_less" : "expand_more"}
           </span>
         </td>
       </tr>
