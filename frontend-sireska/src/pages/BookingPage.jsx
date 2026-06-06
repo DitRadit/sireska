@@ -93,20 +93,48 @@ const BookingPage = () => {
   }, [id]);
 
   // ─── Polling QRIS setiap 10 detik ─────────────────────────────────────────
-  useEffect(() => {
-    if (!activeBooking || !isGuest || qrisString) return;
-    const interval = setInterval(async () => {
-      try {
-        const res = await bookingService.getBookingById(activeBooking.reservasiId);
-        if (res.data?.midtrans_qris_url) {
-          setQrisString(res.data.midtrans_qris_url);
-          setTotalHarga(res.data.total_harga);
-          clearInterval(interval);
-        }
-      } catch { /* abaikan */ }
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [activeBooking, isGuest, qrisString]);
+useEffect(() => {
+  if (!activeBooking) return;
+  // Guest: polling untuk tunggu QRIS
+  // Non-guest: polling untuk tunggu status disetujui
+  if (isGuest && qrisString) return; // guest sudah dapat QRIS, stop
+
+  const interval = setInterval(async () => {
+    try {
+      const res = await bookingService.getBookingById(activeBooking.reservasiId);
+      const data = res.data;
+
+      if (!data || data.status === "ditolak") {
+        // Booking ditolak — bersihkan state
+        localStorage.removeItem(storageKey(id));
+        setActiveBooking(null);
+        setQrisString(null);
+        setTotalHarga(null);
+        clearInterval(interval);
+        Swal.fire({ icon: "info", title: "Pesanan Ditolak", text: data?.catatan_admin || "Pesanan kamu ditolak oleh admin.", confirmButtonColor: "#f97316" });
+        return;
+      }
+
+      if (isGuest && data.midtrans_qris_url) {
+        setQrisString(data.midtrans_qris_url);
+        setTotalHarga(data.total_harga);
+        clearInterval(interval);
+        return;
+      }
+
+      if (!isGuest && data.status === "disetujui") {
+        // Update localStorage dengan status terbaru
+        const updated = { ...activeBooking, status: "disetujui" };
+        localStorage.setItem(storageKey(id), JSON.stringify(updated));
+        setActiveBooking(updated);
+        clearInterval(interval);
+      }
+
+    } catch { /* abaikan */ }
+  }, 10000);
+
+  return () => clearInterval(interval);
+}, [activeBooking, isGuest, qrisString, id]);
 
   // ─── Fetch slot saat tanggal berubah ──────────────────────────────────────
   useEffect(() => {
@@ -538,13 +566,31 @@ const res = await bookingService.createBooking({
                 </div>
               )}
               
-              {activeBooking && !isGuest && (
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex flex-col items-center text-center mb-6">
-                  <span className="material-symbols-outlined text-blue-400 text-3xl mb-2 animate-pulse">hourglass_top</span>
-                  <p className="text-sm font-bold text-gray-700 mb-1">Menunggu Persetujuan Admin</p>
-                  <p className="text-[11px] text-gray-400">Kamu akan dihubungi jika ada update</p>
-                </div>
-              )}
+{activeBooking && !isGuest && (
+  <div className={`border rounded-2xl p-5 flex flex-col items-center text-center mb-6 ${
+    activeBooking.status === "disetujui"
+      ? "bg-green-50 border-green-200"
+      : "bg-blue-50 border-blue-200"
+  }`}>
+    <span className={`material-symbols-outlined text-3xl mb-2 ${
+      activeBooking.status === "disetujui"
+        ? "text-green-500"
+        : "text-blue-400 animate-pulse"
+    }`}>
+      {activeBooking.status === "disetujui" ? "check_circle" : "hourglass_top"}
+    </span>
+    <p className="text-sm font-bold text-gray-700 mb-1">
+      {activeBooking.status === "disetujui"
+        ? "Reservasi Disetujui!"
+        : "Menunggu Persetujuan Admin"}
+    </p>
+    <p className="text-[11px] text-gray-400">
+      {activeBooking.status === "disetujui"
+        ? "Silakan datang sesuai jadwal yang telah dipesan."
+        : "Kamu akan diberitahu jika ada update"}
+    </p>
+  </div>
+)}
   
               <div className="flex flex-col gap-3 mt-auto">
                 {!activeBooking ? (
