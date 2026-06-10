@@ -29,6 +29,13 @@ api.interceptors.response.use(
             const email = error.response?.data?.email || '';
             window.location.href = `/verify-otp?email=${email}`;
         }
+                if (
+            status === 403 &&
+            error.response?.data?.code === "ACCOUNT_DISABLED"
+        ) {
+            localStorage.removeItem('token');
+            window.location.href = '/akun-nonaktif';
+        }
 
         return Promise.reject(error);
     }

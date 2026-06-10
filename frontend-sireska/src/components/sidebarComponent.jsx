@@ -24,7 +24,7 @@ const SidebarComponent = () => {
         { name: "Dashboard", icon: "dashboard", path: "/admin/dashboard", active: true },
         { name: "Fasilitas", icon: "apartment", path: "/admin/fasilitas" },
         { name: "Pesanan", icon: "receipt_long", path: "/admin/reservasi" },
-        { name: "Pengguna", icon: "group", path: "/admin/pengguna" },
+        { name: "Pengguna", icon: "group", path: "/admin/user" },
         { name: "Laporan", icon: "bar_chart", path: "/admin/laporan" },
         { name: "Pengaturan", icon: "settings", path: "/admin/pengaturan" },
     ];

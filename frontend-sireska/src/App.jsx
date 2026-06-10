@@ -20,6 +20,8 @@ import './styles/main.css'
 import FasilitasDetailPage from './pages/FasilitasDetailPage'
 import DetailPesananPage from './pages/DetailPesananPage'
 import AdminPemesananPage from './pages/admin/AdminPemesananPage'
+import AdminUserManagementPage from './pages/admin/AdminUserPage'
+import AkunNonaktifPage from './pages/AkunNonaktifPage'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -30,7 +32,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/home" />} />
-
+      <Route path="/akun-nonaktif" element={<AkunNonaktifPage />} />
       {/* PUBLIC */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -62,6 +64,7 @@ function App() {
 
       {/* ADMIN ROUTE */}
       <Route path="/admin/dashboard" element={token && isAdmin ? <Dashboard /> : <Navigate to="/login" />} />
+      <Route path="/admin/user" element={token && isAdmin ? <AdminUserManagementPage /> : <Navigate to="/login" />} />
       <Route path="/admin/tambahFasilitas" element={token && isAdmin ? <TambahFasilitas /> : <Navigate to="/login" />} />
       <Route path="/admin/fasilitas" element={token && isAdmin ? <Fasilitas /> : <Navigate to="/login" />} />
       <Route path="/admin/reservasi" element={token && isAdmin ? <AdminPemesananPage /> : <Navigate to="/login" />} />

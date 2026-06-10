@@ -6,6 +6,7 @@ require("dotenv").config();
 const authRoutes = require("./routes/authRoutes");
 const fasilitasRoutes = require("./routes/fasilitasRoutes");
 const reservasiRoutes = require("./routes/reservasiRoutes"); 
+const userRoutes = require("./routes/userRoutes"); 
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/fasilitas", fasilitasRoutes);
 app.use("/api/reservasi", reservasiRoutes); 
+app.use("/api/user-management", userRoutes); 
 
 module.exports = app;
