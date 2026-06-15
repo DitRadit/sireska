@@ -80,7 +80,7 @@ model Reservasi {
   midtrans_qris_url  String?  @db.VarChar(500)
   total_harga        Decimal? @db.Decimal(10, 2)
   status_pembayaran  StatusPembayaran?
-
+  midtrans_qris_img  String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -107,12 +107,14 @@ enum StatusReservasi {
   menunggu
   disetujui
   ditolak
+  selesai        // ← tambah
 }
 
 enum StatusFasilitas {
   aktif
   maintenance
   nonaktif
+  sedang_digunakan  // ← tambah
 }
 
 enum StatusPembayaran {

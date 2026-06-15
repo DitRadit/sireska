@@ -101,11 +101,12 @@ const FasilitasDetailPage = () => {
 
 
 
-  const statusConfig = {
-    aktif:       { label: "Tersedia",    bg: "bg-green-100",  text: "text-green-700" },
-    maintenance: { label: "Maintenance", bg: "bg-yellow-100", text: "text-yellow-700" },
-    nonaktif:    { label: "Nonaktif",    bg: "bg-red-100",    text: "text-red-700" },
-  };
+const statusConfig = {
+    aktif:            { label: "Tersedia",         bg: "bg-green-100",  text: "text-green-700" },
+    sedang_digunakan: { label: "Sedang Digunakan", bg: "bg-blue-100",   text: "text-blue-700" },
+    maintenance:      { label: "Maintenance",      bg: "bg-yellow-100", text: "text-yellow-700" },
+    nonaktif:         { label: "Nonaktif",         bg: "bg-red-100",    text: "text-red-700" },
+};
   const status = statusConfig[fasilitas.status] || statusConfig.nonaktif;
 
   return (

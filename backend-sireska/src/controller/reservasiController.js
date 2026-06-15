@@ -1,6 +1,7 @@
 // src/controller/reservasiController.js
 const { PrismaClient } = require("@prisma/client");
 const { coreApi }      = require("../config/midtrans");
+const { cloudinary } = require("../config/cloudinary");
 
 const prisma     = new PrismaClient();
 const ROLE_GUEST = 3;
@@ -388,12 +389,40 @@ exports.approveReservasi = async (req, res) => {
                 }],
             });
 
-            midtransData = {
-                midtrans_order_id: order_id,
-                midtrans_qris_url: chargeResponse?.qr_string || null,
-                total_harga,
-                status_pembayaran: "menunggu_pembayaran",
-            };
+console.log("=== MIDTRANS RESPONSE ===");
+console.log(JSON.stringify(chargeResponse, null, 2));
+console.log("=========================");
+
+// Fetch gambar QRIS dari Midtrans lalu upload ke Cloudinary
+let qrisImgUrl = null;
+const qrisMidtransUrl = chargeResponse?.actions?.find(a => a.name === "generate-qr-code")?.url;
+
+if (qrisMidtransUrl) {
+    const imgRes = await fetch(qrisMidtransUrl, {
+        headers: {
+            Authorization: `Basic ${Buffer.from(process.env.MIDTRANS_SERVER_KEY + ":").toString("base64")}`,
+        },
+    });
+
+    const arrayBuffer = await imgRes.arrayBuffer();
+    const base64      = Buffer.from(arrayBuffer).toString("base64");
+    const dataUri     = `data:image/png;base64,${base64}`;
+
+    const uploaded = await cloudinary.uploader.upload(dataUri, {
+        folder:    "sireska/qris",
+        public_id: `qris-${order_id}`,
+    });
+
+    qrisImgUrl = uploaded.secure_url;
+}
+
+midtransData = {
+    midtrans_order_id: order_id,
+    midtrans_qris_url: chargeResponse?.qr_string || null,
+    midtrans_qris_img: qrisImgUrl,
+    total_harga,
+    status_pembayaran: "menunggu_pembayaran",
+};
         }
 
         const updated = await prisma.reservasi.update({
@@ -523,5 +552,147 @@ exports.simulasiPembayaran = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Simulasi gagal: " + err.message });
+    }
+};
+
+// ─── LAPORAN RESERVASI (Admin) — Export CSV ───────────────────────────────────
+exports.getLaporanReservasi = async (req, res) => {
+    const { status, status_pembayaran, dari, sampai, format = 'json' } = req.query;
+
+    try {
+        const where = {
+            ...(status && { status }),
+            ...(status_pembayaran && { status_pembayaran }),
+            ...(dari && sampai && {
+                tanggal: {
+                    gte: parseLocalDate(dari),
+                    lte: parseLocalDate(sampai),
+                }
+            }),
+        };
+
+        const data = await prisma.reservasi.findMany({
+            where,
+            orderBy: { created_at: 'desc' },
+            include: {
+                user: { select: { nama_lengkap: true, email: true, nim_nip: true, no_hp: true } },
+                fasilitas: { select: { nama_fasilitas: true, lokasi: true } },
+            }
+        });
+
+        if (format === 'csv') {
+            const rows = [
+                ['No', 'ID Reservasi', 'Tanggal', 'Jam Mulai', 'Jam Selesai', 'Fasilitas', 'Lokasi',
+                 'Nama Pemesan', 'Email', 'NIM/NIP', 'No HP', 'Keperluan',
+                 'Status', 'Status Pembayaran', 'Total Harga', 'Catatan Admin', 'Dibuat'].join(',')
+            ];
+
+            data.forEach((r, i) => {
+                const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+                rows.push([
+                    i + 1,
+                    r.reservasi_id,
+                    escape(r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID') : ''),
+                    escape(r.jam_mulai),
+                    escape(r.jam_selesai),
+                    escape(r.fasilitas?.nama_fasilitas),
+                    escape(r.fasilitas?.lokasi),
+                    escape(r.user?.nama_lengkap),
+                    escape(r.user?.email),
+                    escape(r.user?.nim_nip),
+                    escape(r.user?.no_hp),
+                    escape(r.keperluan),
+                    escape(r.status),
+                    escape(r.status_pembayaran),
+                    r.total_harga || 0,
+                    escape(r.catatan_admin),
+                    escape(r.created_at ? new Date(r.created_at).toLocaleString('id-ID') : ''),
+                ].join(','));
+            });
+
+            const csvContent = rows.join('\n');
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename="laporan-reservasi-${Date.now()}.csv"`);
+            // BOM untuk Excel agar UTF-8 terbaca benar
+            return res.send('\uFEFF' + csvContent);
+        }
+
+        // Default: JSON untuk ditampilkan di halaman
+        res.json({
+            message: 'Berhasil mengambil laporan reservasi',
+            total: data.length,
+            data
+        });
+    } catch (err) {
+        console.error('getLaporanReservasi error:', err);
+        res.status(500).json({ message: 'Terjadi kesalahan server' });
+    }
+};
+
+// ─── LAPORAN KONDISI FASILITAS (Admin) — Export CSV ──────────────────────────
+exports.getLaporanFasilitas = async (req, res) => {
+    const { status, format = 'json' } = req.query;
+
+    try {
+        const fasilitas = await prisma.fasilitas.findMany({
+            where: { ...(status && { status }) },
+            orderBy: { created_at: 'asc' },
+            include: {
+                _count: { select: { reservasi: true } },
+                reservasi: {
+                    where: { status: 'disetujui', status_pembayaran: 'lunas' },
+                    select: { total_harga: true }
+                }
+            }
+        });
+
+        const result = fasilitas.map(f => ({
+            fasilitas_id: f.fasilitas_id,
+            nama_fasilitas: f.nama_fasilitas,
+            lokasi: f.lokasi,
+            kapasitas: f.kapasitas,
+            harga_per_jam: f.harga_per_jam,
+            jam_buka: f.jam_buka,
+            jam_tutup: f.jam_tutup,
+            status: f.status,
+            total_reservasi: f._count.reservasi,
+            total_pendapatan: f.reservasi.reduce((acc, r) => acc + Number(r.total_harga || 0), 0),
+            created_at: f.created_at,
+        }));
+
+        if (format === 'csv') {
+            const rows = [
+                ['No', 'ID', 'Nama Fasilitas', 'Lokasi', 'Kapasitas', 'Harga/Jam',
+                 'Jam Buka', 'Jam Tutup', 'Status', 'Total Reservasi', 'Total Pendapatan (Rp)', 'Dibuat'].join(',')
+            ];
+
+            result.forEach((f, i) => {
+                const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+                rows.push([
+                    i + 1,
+                    f.fasilitas_id,
+                    escape(f.nama_fasilitas),
+                    escape(f.lokasi),
+                    f.kapasitas || 0,
+                    f.harga_per_jam || 0,
+                    escape(f.jam_buka),
+                    escape(f.jam_tutup),
+                    escape(f.status),
+                    f.total_reservasi,
+                    f.total_pendapatan,
+                    escape(f.created_at ? new Date(f.created_at).toLocaleString('id-ID') : ''),
+                ].join(','));
+            });
+
+            const csvContent = rows.join('\n');
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename="laporan-fasilitas-${Date.now()}.csv"`);
+            return res.send('\uFEFF' + csvContent);
+        }
+
+        res.json({ message: 'Berhasil mengambil laporan fasilitas', total: result.length, data: result });
+    } catch (err) {
+        console.error('getLaporanFasilitas error:', err);
+        res.status(500).json({ message: 'Terjadi kesalahan server' });
     }
 };

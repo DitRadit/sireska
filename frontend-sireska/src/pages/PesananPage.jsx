@@ -34,9 +34,10 @@ const PesananPage = () => {
     const handleDetail = (id) => navigate(`/pesanan/${id}`);
 
     const getStatusColor = (status) => {
-        if (status === "menunggu") return "bg-orange-100 text-orange-600";
+        if (status === "menunggu")  return "bg-orange-100 text-orange-600";
         if (status === "disetujui") return "bg-green-100 text-green-600";
-        if (status === "ditolak") return "bg-red-100 text-red-600";
+        if (status === "ditolak")   return "bg-red-100 text-red-600";
+        if (status === "selesai")   return "bg-gray-100 text-gray-500";
         return "bg-gray-100 text-gray-600";
     };
 
@@ -74,7 +75,7 @@ const PesananPage = () => {
                                 <p className="text-sm text-gray-500 mb-3">📍 {item.fasilitas?.lokasi || "Sport Center"}</p>
                                 <div className="flex gap-3 text-[11px] font-bold text-gray-600">
                                     <span className="bg-gray-100 px-3 py-1.5 rounded-lg">📅 {new Date(item.tanggal).toLocaleDateString('id-ID')}</span>
-                                    <span className="bg-gray-100 px-3 py-1.5 rounded-lg">🕒 {item.jadwal?.jam_buka} - {item.jadwal?.jam_tutup}</span>
+                                    <span className="bg-gray-100 px-3 py-1.5 rounded-lg">🕒 {item.jam_mulai} - {item.jam_selesai}</span>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end gap-3">

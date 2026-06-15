@@ -13,19 +13,19 @@ const formatTanggal = (tgl) =>
   new Date(tgl).toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
 const getStatusColor = (status) => {
-  if (status === "menunggu")  return "bg-orange-100 text-orange-600";
-  if (status === "disetujui") return "bg-green-100 text-green-600";
-  if (status === "ditolak")   return "bg-red-100 text-red-600";
-  if (status === "selesai")   return "bg-blue-100 text-blue-600";
-  return "bg-gray-100 text-gray-600";
+    if (status === "menunggu")  return "bg-orange-100 text-orange-600";
+    if (status === "disetujui") return "bg-green-100 text-green-600";
+    if (status === "ditolak")   return "bg-red-100 text-red-600";
+    if (status === "selesai")   return "bg-gray-100 text-gray-500";
+    return "bg-gray-100 text-gray-600";
 };
 
 const DetailPesananPage = () => {
   const { id }   = useParams();
   const navigate = useNavigate();
 
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data,       setData]       = useState(null);
+  const [loading,    setLoading]    = useState(true);
   const [simulating, setSimulating] = useState(false);
 
   const user    = JSON.parse(localStorage.getItem("user") || "{}");
@@ -65,22 +65,19 @@ const DetailPesananPage = () => {
   }, [data, isGuest, id]);
 
   // ─── Simulasi pembayaran sandbox ──────────────────────────────────────────
- const handleSimulasiPembayaran = async () => {
-  try {
-    setSimulating(true);
-
-    const res = await bookingService.simulasiPembayaran(id);
-    console.log("Simulasi response:", res);
-
-    await Swal.fire({ icon: "success", title: "Simulasi berhasil!", timer: 1500, showConfirmButton: false });
-    fetchDetail();
-  } catch (err) {
-    console.error(err);
-    Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || err.message });
-  } finally {
-    setSimulating(false);
-  }
-};
+  const handleSimulasiPembayaran = async () => {
+    try {
+      setSimulating(true);
+      await bookingService.simulasiPembayaran(id);
+      await Swal.fire({ icon: "success", title: "Simulasi berhasil!", timer: 1500, showConfirmButton: false });
+      fetchDetail();
+    } catch (err) {
+      console.error(err);
+      Swal.fire({ icon: "error", title: "Gagal", text: err.response?.data?.message || err.message });
+    } finally {
+      setSimulating(false);
+    }
+  };
 
   if (loading) return <div className="h-screen flex items-center justify-center">Memuat detail...</div>;
   if (!data)   return <div className="h-screen flex items-center justify-center text-red-500">Data tidak ditemukan.</div>;
@@ -160,28 +157,59 @@ const DetailPesananPage = () => {
                 alt={data.fasilitas?.nama_fasilitas}
               />
 
-              {/* QRIS panel */}
+              {/* ─── QRIS PANEL (guest + disetujui) ─── */}
               {isGuest && data.status === "disetujui" && (
                 <div className="mb-6">
                   {data.midtrans_qris_url ? (
                     <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5 flex flex-col items-center text-center">
                       <span className="material-symbols-outlined text-orange-500 text-3xl mb-2">qr_code_2</span>
                       <p className="text-sm font-bold text-gray-700 mb-1">Reservasi Disetujui!</p>
-                      <p className="text-[11px] text-gray-500 mb-3">Scan QRIS di bawah untuk menyelesaikan pembayaran</p>
+                      <p className="text-[11px] text-gray-500 mb-3">Scan QRIS untuk menyelesaikan pembayaran</p>
+
                       {data.total_harga && (
                         <p className="text-lg font-extrabold text-orange-600 mb-4">{formatRupiah(data.total_harga)}</p>
                       )}
-                      <div className="bg-white p-3 rounded-xl border border-gray-200">
-                        <QRCodeSVG value={data.midtrans_qris_url} size={180} />
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-3">QRIS berlaku selama 24 jam setelah diterbitkan</p>
 
-                      {/* Tombol simulasi — hanya sandbox & belum lunas */}
+                      {/* Gambar QRIS — pakai Cloudinary jika ada, fallback ke SVG */}
+                      <div className="bg-white p-3 rounded-xl border border-gray-200 mb-3">
+                        {data.midtrans_qris_img ? (
+                          <img
+                            src={data.midtrans_qris_img}
+                            alt="QRIS"
+                            className="w-[180px] h-[180px] object-contain"
+                          />
+                        ) : (
+                          <QRCodeSVG value={data.midtrans_qris_url} size={180} />
+                        )}
+                      </div>
+
+                      <p className="text-[10px] text-gray-400 mb-3">QRIS berlaku 15 menit setelah diterbitkan</p>
+
+                      {/* URL Cloudinary untuk simulator */}
+                      {data.midtrans_qris_img && data.status_pembayaran !== "lunas" && (
+                        <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 w-full text-left mb-3">
+                          <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">
+                            QR Image URL (untuk Midtrans Simulator)
+                          </p>
+                          <p className="text-[9px] text-gray-500 break-all leading-relaxed">
+                            {data.midtrans_qris_img}
+                          </p>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(data.midtrans_qris_img)}
+                            className="flex items-center gap-1 text-[10px] font-bold text-orange-500 hover:text-orange-600 mt-1.5"
+                          >
+                            <span className="material-symbols-outlined text-[13px]">content_copy</span>
+                            Copy URL
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Tombol simulasi */}
                       {data.status_pembayaran !== "lunas" && (
                         <button
                           onClick={handleSimulasiPembayaran}
                           disabled={simulating}
-                          className="mt-4 w-full py-2.5 rounded-xl bg-orange-500 text-white text-[13px] font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
+                          className="w-full py-2.5 rounded-xl bg-orange-500 text-white text-[13px] font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
                         >
                           {simulating ? "Memproses..." : "[Sandbox] Simulasi Bayar"}
                         </button>
@@ -191,19 +219,35 @@ const DetailPesananPage = () => {
                     <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 flex flex-col items-center text-center">
                       <span className="material-symbols-outlined text-gray-400 text-3xl mb-2 animate-pulse">hourglass_top</span>
                       <p className="text-sm font-bold text-gray-600 mb-1">Menunggu QRIS diterbitkan</p>
-                      <p className="text-[11px] text-gray-400">QRIS akan otomatis muncul di sini setelah reservasi disetujui</p>
+                      <p className="text-[11px] text-gray-400">QRIS akan otomatis muncul setelah reservasi disetujui</p>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Status lunas */}
-              {isGuest && data.status_pembayaran === "lunas" && (
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                  <span className="material-symbols-outlined text-green-500 text-[18px]">check_circle</span>
-                  <p className="text-[12px] text-green-700 font-bold">Pembayaran lunas</p>
-                </div>
-              )}
+{/* Status lunas */}
+{isGuest && data.status_pembayaran === "lunas" && (
+    <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-3">
+        <span className="material-symbols-outlined text-green-500 text-[18px]">check_circle</span>
+        <p className="text-[12px] text-green-700 font-bold">Pembayaran lunas</p>
+    </div>
+)}
+
+{/* Status selesai */}
+{data.status === "selesai" && (
+    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+        <span className="material-symbols-outlined text-gray-400 text-[18px]">task_alt</span>
+        <p className="text-[12px] text-gray-500 font-bold">Reservasi telah selesai</p>
+    </div>
+)}
+
+{/* Non-guest disetujui */}
+{!isGuest && data.status === "disetujui" && (
+    <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+        <span className="material-symbols-outlined text-green-500 text-[18px]">check_circle</span>
+        <p className="text-[12px] text-green-700 font-bold">Reservasi disetujui, silakan datang sesuai jadwal</p>
+    </div>
+)}
             </div>
 
           </div>

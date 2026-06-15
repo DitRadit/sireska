@@ -27,4 +27,7 @@ router.patch( "/admin/:id/reject",  authMiddleware, requireRole(1), reservasi.re
 router.delete("/admin/:id",      authMiddleware, requireRole(1), reservasi.deleteReservasi);
 router.post("/payment/notification", reservasi.midtransNotification);
 
+router.get('/admin/laporan/reservasi', authMiddleware, requireRole(1), reservasi.getLaporanReservasi);
+router.get('/admin/laporan/fasilitas', authMiddleware, requireRole(1), reservasi.getLaporanFasilitas);
+
 module.exports = router;

@@ -59,45 +59,42 @@ const BookingPage = () => {
   }, [id]);
 
   // ─── Restore booking aktif dari localStorage ───────────────────────────────
-  useEffect(() => {
-    const key   = storageKey(id);
-    const saved = localStorage.getItem(key);
-    if (!saved) return;
+useEffect(() => {
+  const key   = storageKey(id);
+  const saved = localStorage.getItem(key);
+  if (!saved) return;
 
-    try {
-      const booking = JSON.parse(saved);
+  try {
+    const booking = JSON.parse(saved);
 
-      // Validasi ke server — pastikan booking masih aktif
-      bookingService.getBookingById(booking.reservasiId).then((res) => {
-        const status = res.data?.status;
+    bookingService.getBookingById(booking.reservasiId).then((res) => {
+      const status            = res.data?.status;
+      const status_pembayaran = res.data?.status_pembayaran;
 
-        // Jika sudah ditolak atau tidak ditemukan, hapus dari localStorage
-        if (!status || status === "ditolak") {
-          localStorage.removeItem(key);
-          return;
-        }
-
-        setActiveBooking(booking);
-
-        if (res.data?.midtrans_qris_url) {
-          setQrisString(res.data.midtrans_qris_url);
-          setTotalHarga(res.data.total_harga);
-        }
-      }).catch(() => {
-        // API error (misal 404) — anggap booking sudah tidak valid
+      // Hapus jika ditolak ATAU sudah lunas
+      if (!status || status === "ditolak" || status_pembayaran === "lunas") {
         localStorage.removeItem(key);
-      });
-    } catch {
+        return;
+      }
+
+      setActiveBooking(booking);
+
+      if (res.data?.midtrans_qris_url) {
+        setQrisString(res.data.midtrans_qris_url);
+        setTotalHarga(res.data.total_harga);
+      }
+    }).catch(() => {
       localStorage.removeItem(key);
-    }
-  }, [id]);
+    });
+  } catch {
+    localStorage.removeItem(key);
+  }
+}, [id]);
 
   // ─── Polling QRIS setiap 10 detik ─────────────────────────────────────────
 useEffect(() => {
   if (!activeBooking) return;
-  // Guest: polling untuk tunggu QRIS
-  // Non-guest: polling untuk tunggu status disetujui
-  if (isGuest && qrisString) return; // guest sudah dapat QRIS, stop
+  if (isGuest && qrisString) return;
 
   const interval = setInterval(async () => {
     try {
@@ -105,13 +102,33 @@ useEffect(() => {
       const data = res.data;
 
       if (!data || data.status === "ditolak") {
-        // Booking ditolak — bersihkan state
         localStorage.removeItem(storageKey(id));
         setActiveBooking(null);
         setQrisString(null);
         setTotalHarga(null);
         clearInterval(interval);
-        Swal.fire({ icon: "info", title: "Pesanan Ditolak", text: data?.catatan_admin || "Pesanan kamu ditolak oleh admin.", confirmButtonColor: "#f97316" });
+        Swal.fire({
+          icon: "info",
+          title: "Pesanan Ditolak",
+          text: data?.catatan_admin || "Pesanan kamu ditolak oleh admin.",
+          confirmButtonColor: "#f97316",
+        });
+        return;
+      }
+
+      // Clear localStorage setelah lunas
+      if (data.status_pembayaran === "lunas") {
+        localStorage.removeItem(storageKey(id));
+        setActiveBooking(null);
+        setQrisString(null);
+        setTotalHarga(null);
+        clearInterval(interval);
+        Swal.fire({
+          icon: "success",
+          title: "Pembayaran Lunas!",
+          text: "Terima kasih, pembayaran kamu sudah dikonfirmasi.",
+          confirmButtonColor: "#f97316",
+        });
         return;
       }
 
@@ -123,7 +140,6 @@ useEffect(() => {
       }
 
       if (!isGuest && data.status === "disetujui") {
-        // Update localStorage dengan status terbaru
         const updated = { ...activeBooking, status: "disetujui" };
         localStorage.setItem(storageKey(id), JSON.stringify(updated));
         setActiveBooking(updated);

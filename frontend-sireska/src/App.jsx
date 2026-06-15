@@ -22,6 +22,8 @@ import DetailPesananPage from './pages/DetailPesananPage'
 import AdminPemesananPage from './pages/admin/AdminPemesananPage'
 import AdminUserManagementPage from './pages/admin/AdminUserPage'
 import AkunNonaktifPage from './pages/AkunNonaktifPage'
+import UserProfilePage from './pages/UserProfilePage'
+import AdminLaporanPage from './pages/admin/AdminLaporanPage'
 
 function App() {
   const token = localStorage.getItem('token')
@@ -38,10 +40,12 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/verify-otp" element={<VerifyOtp />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-
+      
       {/* USER ROUTE */}
       <Route path="/home" element={token ? (isAdmin ? <Navigate to="/admin/dashboard" /> : <Home />) : <Navigate to="/login" />} />
+      <Route path="/profil" element={token ? <UserProfilePage /> : <Navigate to="/login" />} />
       <Route path="/fasilitas" element={token ? (isAdmin ? <Navigate to="/admin/fasilitas" /> : <FasilitasUser />) : <Navigate to="/login" />} />
+      <Route path="/admin/laporan" element={token && isAdmin ? <AdminLaporanPage /> : <Navigate to="/login" />} />
 <Route
   path="/fasilitas/:id"
   element={

@@ -16,9 +16,10 @@ const formatTanggal = (dateStr) => {
 };
 
 const STATUS_CONFIG = {
-  menunggu:  { label: "Menunggu Verifikasi", bg: "bg-blue-50",   text: "text-blue-600",   border: "border-blue-200" },
-  disetujui: { label: "Disetujui",           bg: "bg-orange-500",text: "text-white",       border: "border-orange-500" },
-  ditolak:   { label: "Ditolak",             bg: "bg-red-50",    text: "text-red-400",     border: "border-red-200" },
+    menunggu:  { label: "Menunggu Verifikasi", bg: "bg-blue-50",   text: "text-blue-600",   border: "border-blue-200" },
+    disetujui: { label: "Disetujui",           bg: "bg-orange-500",text: "text-white",       border: "border-orange-500" },
+    ditolak:   { label: "Ditolak",             bg: "bg-red-50",    text: "text-red-400",     border: "border-red-200" },
+    selesai:   { label: "Selesai",             bg: "bg-gray-100",  text: "text-gray-500",    border: "border-gray-200" },
 };
 
 const BAYAR_CONFIG = {
@@ -296,12 +297,13 @@ const AdminPemesananPage = () => {
 
   useEffect(() => { fetchBookings(); }, [filterStatus]);
 
-  const counts = {
-    semua:    bookings.length,
-    menunggu: bookings.filter((b) => b.status === "menunggu").length,
-    disetujui:bookings.filter((b) => b.status === "disetujui").length,
-    ditolak:  bookings.filter((b) => b.status === "ditolak").length,
-  };
+const counts = {
+    semua:     bookings.length,
+    menunggu:  bookings.filter((b) => b.status === "menunggu").length,
+    disetujui: bookings.filter((b) => b.status === "disetujui").length,
+    ditolak:   bookings.filter((b) => b.status === "ditolak").length,
+    selesai:   bookings.filter((b) => b.status === "selesai").length,
+};
 
   return (
     <>
@@ -327,13 +329,14 @@ const AdminPemesananPage = () => {
           <div className="flex-1 p-8 overflow-y-auto">
 
             {/* SUMMARY CARDS */}
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-              {[
-                { key: "",          label: "Semua Pesanan",       icon: "list_alt",     color: "lime" },
-                { key: "menunggu",  label: "Menunggu Verifikasi", icon: "hourglass_top",color: "blue" },
-                { key: "disetujui", label: "Disetujui",           icon: "check_circle", color: "orange" },
-                { key: "ditolak",   label: "Ditolak",             icon: "cancel",       color: "red" },
-              ].map(({ key, label, icon, color }) => (
+            <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
+{[
+    { key: "",          label: "Semua Pesanan",       icon: "list_alt",     color: "lime" },
+    { key: "menunggu",  label: "Menunggu Verifikasi", icon: "hourglass_top",color: "blue" },
+    { key: "disetujui", label: "Disetujui",           icon: "check_circle", color: "orange" },
+    { key: "ditolak",   label: "Ditolak",             icon: "cancel",       color: "red" },
+    { key: "selesai",   label: "Selesai",             icon: "task_alt",     color: "gray" },
+].map(({ key, label, icon, color }) => (
                 <button
                   key={key}
                   onClick={() => setFilterStatus(key)}
