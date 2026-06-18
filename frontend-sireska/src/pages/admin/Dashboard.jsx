@@ -20,12 +20,13 @@ const stats = [
   },
 ]
 
+// 👇 Path sudah disesuaikan dengan SidebarComponent
 const menuCards = [
   {
     title: 'Kelola Pengguna',
     icon: 'group',
     color: 'bg-orange-500',
-    path: '/admin/pengguna'
+    path: '/admin/user' 
   },
   {
     title: 'Lihat Laporan',
@@ -40,10 +41,10 @@ const menuCards = [
     path: '/admin/reservasi'
   },
   {
-    title: 'Tambah Fasilitas',
+    title: 'Data Fasilitas',
     icon: 'sports_volleyball',
     color: 'bg-orange-400 hover:bg-orange-500',
-    path: '/admin/fasilitas/tambah'
+    path: '/admin/fasilitas' 
   },
 ]
 
@@ -105,7 +106,6 @@ export default function Dashboard() {
         href="https://fonts.googleapis.com/icon?family=Material+Icons"
       />
 
-      {/* Background diganti sedikit lebih bersih (gray-50) */}
       <div className="min-h-screen bg-gray-50 flex font-[Poppins]">
         {/* sidebar */}
         <AdminSidebar />
@@ -134,8 +134,9 @@ export default function Dashboard() {
                 </span>
               </button>
 
+              {/* 👇 Arahkan ke /profil sesuai HeaderComponent */}
               <button
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate('/profil')}
                 className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition text-gray-500"
               >
                 <span className="material-icons text-[20px]">
@@ -148,7 +149,7 @@ export default function Dashboard() {
           {/* dashboard body */}
           <div className="flex-1 p-8 grid grid-cols-12 gap-6 overflow-y-auto">
             
-            {/* LEFT COLUMN (Disesuaikan proporsinya jadi col-span-8) */}
+            {/* LEFT COLUMN */}
             <div className="col-span-12 xl:col-span-8 flex flex-col gap-6">
               
               {/* hero */}
@@ -161,7 +162,9 @@ export default function Dashboard() {
                   <p className="text-gray-500 mt-2 max-w-xl text-sm leading-relaxed">
                     Selamat datang di dashboard admin SiResKa. Kelola fasilitas olahraga, pantau pesanan, dan lihat laporan sistem secara realtime.
                   </p>
-                  <button onClick={() => navigate('/admin/pesanan')} className="mt-6 bg-orange-500 hover:bg-orange-600 transition text-white px-6 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-orange-200/50 flex items-center gap-2 w-max">
+                  
+                  {/* 👇 Arahkan tombol ini ke /admin/reservasi */}
+                  <button onClick={() => navigate('/admin/reservasi')} className="mt-6 bg-orange-500 hover:bg-orange-600 transition text-white px-6 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-orange-200/50 flex items-center gap-2 w-max">
                     <span className="material-icons text-[18px]">add_circle</span>
                     Pesanan Baru
                   </button>
@@ -192,7 +195,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN (Disesuaikan proporsinya jadi col-span-4) */}
+            {/* RIGHT COLUMN */}
             <div className="col-span-12 xl:col-span-4 flex flex-col gap-6">
               
               {/* stats */}
