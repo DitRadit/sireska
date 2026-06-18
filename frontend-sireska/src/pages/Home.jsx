@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Search, 
   Calendar, 
@@ -15,6 +16,8 @@ import FooterComponent from '../components/FooterComponent';
 import Gambar from '../assets/3d Art.png'; 
 
 const Home = () => {
+  const navigate = useNavigate();
+
   const [fasilitas, setFasilitas] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -80,10 +83,16 @@ const Home = () => {
             </p>
             <div className="flex space-x-4">
               {/* BUTTON HERO DI-UPGRADE */}
-              <button className="bg-orange-500 text-white px-8 py-4 rounded-xl font-bold flex items-center transition-all duration-300 hover:bg-orange-600 hover:shadow-xl hover:shadow-orange-200 hover:-translate-y-1 active:scale-95 group">
+              <button
+                onClick={() => navigate('/fasilitas')}
+                className="bg-orange-500 text-white px-8 py-4 rounded-xl font-bold flex items-center transition-all duration-300 hover:bg-orange-600 hover:shadow-xl hover:shadow-orange-200 hover:-translate-y-1 active:scale-95 group"
+              >
                 Pesan Sekarang <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="bg-white border border-gray-200 text-gray-700 px-8 py-4 rounded-xl font-bold transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md hover:-translate-y-1 active:scale-95">
+              <button
+                onClick={() => navigate('/fasilitas')}
+                className="bg-white border border-gray-200 text-gray-700 px-8 py-4 rounded-xl font-bold transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 hover:shadow-md hover:-translate-y-1 active:scale-95"
+              >
                 Lihat Fasilitas
               </button>
             </div>
@@ -103,9 +112,9 @@ const Home = () => {
                 <h2 className="text-3xl font-bold mb-2">Fasilitas Terpopuler</h2>
                 <p className="text-gray-500">Pilih fasilitas terbaik untuk kegiatan organisasimu.</p>
               </div>
-              <a href="/fasilitas" className="text-orange-500 font-bold hover:text-orange-600 flex items-center transition group">
+              <Link to="/fasilitas" className="text-orange-500 font-bold hover:text-orange-600 flex items-center transition group">
                 Lihat Semua <ChevronRight className="w-5 h-5 ml-1 group-hover:translate-x-1 transition" />
-              </a>
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -129,7 +138,10 @@ const Home = () => {
                       </p>
                     </div>
                     {/* BUTTON CARD DI-UPGRADE */}
-                    <button className="w-full py-3 mt-auto bg-gray-50 text-gray-700 font-bold rounded-xl transition-all duration-300 hover:bg-orange-500 hover:text-white hover:shadow-lg hover:shadow-orange-200 active:scale-95">
+                    <button
+                      onClick={() => navigate(`/fasilitas/${item.fasilitas_id}`)}
+                      className="w-full py-3 mt-auto bg-gray-50 text-gray-700 font-bold rounded-xl transition-all duration-300 hover:bg-orange-500 hover:text-white hover:shadow-lg hover:shadow-orange-200 active:scale-95"
+                    >
                       Pesan
                     </button>
                   </div>
@@ -255,7 +267,10 @@ const Home = () => {
             <div className="relative z-10">
               <h2 className="text-4xl font-extrabold mb-8">Mulai pesan fasilitas kampus sekarang!</h2>
               {/* BUTTON CTA DI-UPGRADE */}
-              <button className="bg-white text-orange-500 font-extrabold px-10 py-4 rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 hover:shadow-xl active:scale-95">
+              <button
+                onClick={() => navigate('/fasilitas')}
+                className="bg-white text-orange-500 font-extrabold px-10 py-4 rounded-2xl transition-all duration-300 hover:bg-gray-50 hover:scale-105 hover:shadow-xl active:scale-95"
+              >
                 Pesan Sekarang
               </button>
             </div>

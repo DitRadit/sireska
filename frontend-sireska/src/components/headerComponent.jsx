@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { ChevronDown, LogOut } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
+import { User } from "lucide-react";
 
 import logoIconOnly from "../assets/SiResKa Light Background.png";
 
@@ -176,15 +177,28 @@ export default function HeaderComponent() {
                     isProfileOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"
                   )}
                 >
-                  <div className="px-4 py-3 border-b border-gray-50">
-                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Akun Saya</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" /> Keluar Akun
-                  </button>
+<div className="px-4 py-3 border-b border-gray-50">
+  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
+    Akun Saya
+  </p>
+</div>
+
+<Link
+  to="/profil"
+  onClick={closeMenus}
+  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-500 transition-colors"
+>
+  <User className="w-4 h-4" />
+  Profil Saya
+</Link>
+
+<button
+  onClick={handleLogout}
+  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+>
+  <LogOut className="w-4 h-4" />
+  Keluar Akun
+</button>
                 </div>
               </div>
             ) : (
