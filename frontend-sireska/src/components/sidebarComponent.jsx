@@ -1,9 +1,11 @@
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom"; // Tambahkan useLocation
 
 import logoIconOnly from "../assets/SiResKa Light Background.png";
+
 const SidebarComponent = () => {
     const navigate = useNavigate();
+    const location = useLocation(); // Inisialisasi useLocation
     const user = JSON.parse(localStorage.getItem("user"));
 
     useEffect(() => {
@@ -20,13 +22,13 @@ const SidebarComponent = () => {
         document.head.appendChild(font);
     }, []);
 
+    // Hapus properti 'active: true' yang di-hardcode
     const menus = [
-        { name: "Dashboard", icon: "dashboard", path: "/admin/dashboard", active: true },
+        { name: "Dashboard", icon: "dashboard", path: "/admin/dashboard" },
         { name: "Fasilitas", icon: "apartment", path: "/admin/fasilitas" },
         { name: "Pesanan", icon: "receipt_long", path: "/admin/reservasi" },
         { name: "Pengguna", icon: "group", path: "/admin/user" },
-        { name: "Laporan", icon: "bar_chart", path: "/admin/laporan" },
-        { name: "Pengaturan", icon: "settings", path: "/admin/pengaturan" },
+        { name: "Laporan", icon: "bar_chart", path: "/admin/laporan" }
     ];
 
     const handleLogout = () => {
@@ -52,24 +54,29 @@ const SidebarComponent = () => {
 
                 <div className="px-3 mt-2">
                     <ul className="space-y-2">
-                        {menus.map((menu, index) => (
-                            <li key={index}>
-                                <Link
-                                    to={menu.path}
-                                    className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-medium transition duration-200
-                                    ${
-                                        menu.active
-                                            ? "bg-orange-500 text-white"
-                                            : "text-orange-500 hover:bg-orange-50"
-                                    }`}
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">
-                                        {menu.icon}
-                                    </span>
-                                    <span>{menu.name}</span>
-                                </Link>
-                            </li>
-                        ))}
+                        {menus.map((menu, index) => {
+                            // Cek apakah path saat ini sama dengan path menu
+                            const isActive = location.pathname === menu.path;
+
+                            return (
+                                <li key={index}>
+                                    <Link
+                                        to={menu.path}
+                                        className={`flex items-center gap-4 px-4 py-3 rounded-xl text-sm font-medium transition duration-200
+                                        ${
+                                            isActive
+                                                ? "bg-orange-500 text-white"
+                                                : "text-orange-500 hover:bg-orange-50"
+                                        }`}
+                                    >
+                                        <span className="material-symbols-outlined text-[20px]">
+                                            {menu.icon}
+                                        </span>
+                                        <span>{menu.name}</span>
+                                    </Link>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
             </div>
