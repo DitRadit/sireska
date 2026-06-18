@@ -1,11 +1,12 @@
 import { useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom"; // Tambahkan useLocation
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import Swal from "sweetalert2"; // Import SweetAlert2
 
 import logoIconOnly from "../assets/SiResKa Light Background.png";
 
 const SidebarComponent = () => {
     const navigate = useNavigate();
-    const location = useLocation(); // Inisialisasi useLocation
+    const location = useLocation();
     const user = JSON.parse(localStorage.getItem("user"));
 
     useEffect(() => {
@@ -22,7 +23,6 @@ const SidebarComponent = () => {
         document.head.appendChild(font);
     }, []);
 
-    // Hapus properti 'active: true' yang di-hardcode
     const menus = [
         { name: "Dashboard", icon: "dashboard", path: "/admin/dashboard" },
         { name: "Fasilitas", icon: "apartment", path: "/admin/fasilitas" },
@@ -32,9 +32,33 @@ const SidebarComponent = () => {
     ];
 
     const handleLogout = () => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        navigate("/login");
+        // Tampilkan konfirmasi SweetAlert2 sebelum logout
+        Swal.fire({
+            title: 'Yakin mau logout?',
+            text: "Sesi admin kamu akan berakhir.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f97316', // Warna orange-500
+            cancelButtonColor: '#9ca3af', // Warna abu-abu
+            confirmButtonText: 'Ya, Logout!',
+            cancelButtonText: 'Batal',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Logika hapus storage dan redirect
+                localStorage.removeItem("user");
+                localStorage.removeItem("token");
+                navigate("/login");
+                
+                // Opsional: Pesan sukses keluar
+                Swal.fire({
+                    title: 'Berhasil Logout!',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        });
     };
 
     return (
@@ -55,7 +79,6 @@ const SidebarComponent = () => {
                 <div className="px-3 mt-2">
                     <ul className="space-y-2">
                         {menus.map((menu, index) => {
-                            // Cek apakah path saat ini sama dengan path menu
                             const isActive = location.pathname === menu.path;
 
                             return (

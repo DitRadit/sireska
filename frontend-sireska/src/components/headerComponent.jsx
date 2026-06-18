@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
-import { User } from "lucide-react";
+import Swal from "sweetalert2";
 
 import logoIconOnly from "../assets/SiResKa Light Background.png";
 
@@ -117,10 +117,32 @@ export default function HeaderComponent() {
 
   const handleLogout = () => {
     closeMenus();
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.dispatchEvent(new Event("authChange"));
-    navigate("/home");
+    
+    Swal.fire({
+      title: 'Yakin mau keluar?',
+      text: "Sesi kamu akan berakhir setelah ini.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f97316', // Warna orange-500 Tailwind
+      cancelButtonColor: '#9ca3af', // Warna abu-abu Tailwind
+      confirmButtonText: 'Ya, Keluar!',
+      cancelButtonText: 'Batal',
+      reverseButtons: true
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.dispatchEvent(new Event("authChange"));
+        navigate("/home");
+        
+        Swal.fire({
+          title: 'Berhasil Keluar!',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+    });
   };
 
   return (
@@ -177,28 +199,28 @@ export default function HeaderComponent() {
                     isProfileOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"
                   )}
                 >
-<div className="px-4 py-3 border-b border-gray-50">
-  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
-    Akun Saya
-  </p>
-</div>
+                  <div className="px-4 py-3 border-b border-gray-50">
+                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                      Akun Saya
+                    </p>
+                  </div>
 
-<Link
-  to="/profil"
-  onClick={closeMenus}
-  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-500 transition-colors"
->
-  <User className="w-4 h-4" />
-  Profil Saya
-</Link>
+                  <Link
+                    to="/profil"
+                    onClick={closeMenus}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-500 transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    Profil Saya
+                  </Link>
 
-<button
-  onClick={handleLogout}
-  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
->
-  <LogOut className="w-4 h-4" />
-  Keluar Akun
-</button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Keluar Akun
+                  </button>
                 </div>
               </div>
             ) : (
