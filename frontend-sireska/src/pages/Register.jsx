@@ -126,15 +126,15 @@ const Register = () => {
 
         <div className="w-full max-w-sm flex flex-col mt-2 md:mt-0">
           
-          <h2 className="text-[#ff6b2c] text-3xl md:text-4xl font-bold mb-2 md:mb-3">Create an account</h2>
-          <p className="text-gray-500 text-[10px] md:text-xs font-light mb-6 md:mb-8 leading-relaxed pr-4">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
+          <h2 className="text-[#ff6b2c] text-3xl md:text-4xl font-bold mb-2 md:mb-3">Mulai Sekarang!</h2>
+          <p className="text-gray-500 text-[10px] md:text-xs font-light  md:mb-4 leading-relaxed pr-4">
+            Buat akun Anda hari ini untuk bergabung dengan komunitas olahraga kami.
           </p>
 
           <div className="flex flex-col gap-3.5">
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Your name</label>
+              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Nama</label>
               <input
                 type="text"
                 name="nama_lengkap"
@@ -146,7 +146,7 @@ const Register = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Student id (optional)</label>
+              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">NIM (optional)</label>
               <input
                 type="text"
                 name="nim_nip"
@@ -158,7 +158,7 @@ const Register = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Your email</label>
+              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Email</label>
               <input
                 type="email"
                 name="email"
@@ -170,7 +170,7 @@ const Register = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Create password</label>
+              <label className="text-[10px] md:text-[11px] font-bold text-gray-800">Buat Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -208,7 +208,7 @@ const Register = () => {
           </div>
 
           <div className="text-center mt-8 text-xs font-semibold text-gray-500">
-            Already have an account?{' '}
+            Sudah Punya akun?{' '}
             <Link to="/login" className="text-[#ff6b2c] hover:underline">Login</Link>
           </div>
 

@@ -113,14 +113,14 @@ const handleSubmit = async () => {
     </button>
 
                 <div className="w-full max-w-sm flex flex-col mt-2 md:mt-0">
-                    <h2 className="text-[#ff6b2c] text-4xl font-bold mb-3">Hello Again!</h2>
-                    <p className="text-gray-500 text-xs font-light mb-8 leading-relaxed pr-4">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
+                    <h2 className="text-[#ff6b2c] text-4xl font-bold mb-3">Selamat Datang Kembali</h2>
+                    <p className="text-gray-500 text-xs font-light mb-4 leading-relaxed pr-4">
+                        Masuk sekarang untuk memesan venue olahraga favorit Anda dengan cepat dan mudah.
                     </p>
 
                     <div className="flex flex-col gap-5">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-bold text-gray-800">Your email</label>
+                            <label className="text-[11px] font-bold text-gray-800">Email</label>
                             <input
                                 type="email"
                                 name="email"
@@ -148,7 +148,7 @@ const handleSubmit = async () => {
                             </div>
                             <div className="flex justify-end mt-1">
                                 <Link to="/forgot-password" className="text-[11px] text-[#ff6b2c] hover:underline font-semibold">
-                                    Forgot password?
+                                    Lupa password?
                                 </Link>
                             </div>
                         </div>
@@ -172,7 +172,7 @@ const handleSubmit = async () => {
                     </div>
 
                     <div className="text-center mt-8 text-xs font-semibold text-gray-500">
-                        Doesn't have an account?{' '}
+                        Belum punya akun?{' '}
                         <Link to="/register" className="text-[#ff6b2c] hover:underline">Sign Up</Link>
                     </div>
                 </div>
